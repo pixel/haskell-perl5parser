@@ -8,16 +8,13 @@ import Perl5Parser.Expr
 import qualified Perl5Parser.Token
 import qualified Perl5Parser.Token.Number
 
-line :: Perl5Parser Node
-sideff :: Perl5Parser Node
-infix_cmd :: Perl5Parser Node
-use :: Perl5Parser Node
-
 -- | A collection of "lines" in the program
+lines_ :: Perl5Parser [Node]
 lines_ = pcons line lines_
         <|> pcons sideff (option [] (pcons semi_colon lines_))
         <|> return []
 
+line :: Perl5Parser Node
 line = format
        <|> sub_declaration
        <|> if_then
@@ -100,17 +97,20 @@ label = newNode"Token::label"$ try$ seQ [ word, operator ":" ]
 
 
 -- | An expression which may have a side-effect
+sideff :: Perl5Parser Node
 sideff = use <|> package <|> infix_cmd
 
+infix_cmd :: Perl5Parser Node
 infix_cmd = do e <- expr
                option e $ newNode"infix_cmd"$ fmap (e :) infix_cmd_optional
 infix_cmd_optional = seQ [ choice (map symbol [ "unless", "while", "until", "for" ]) <?> ""
                          , lexpr
                          ]
 
+use :: Perl5Parser Node
 use = newNode"use"$ try$ seQ [ symbol "use"
                              , toListToken Perl5Parser.Token.Number.p_VersionNumber <|> use_module
                              , toTokens spaces_comments
                              ]
 
-use_module = word
+use_module = ident
