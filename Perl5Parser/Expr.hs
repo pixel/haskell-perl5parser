@@ -59,6 +59,8 @@ operators =
 -- "-A", "-B", "-C", "-M", "-O", "-R", "-S", "-T", "-W", "-X", "-b", "-c", "-d", "-e", "-f", "-g", "-k", "-l", "-o", "-p", "-r", "-s", "-t", "-u", "-w", "-x", "-z"
 
 
+op = toList . operator_node
+operator' s = if isWordAny (last s) then symbol_node s else try $ operator_node s
 operator_to_parser (i, prio, op) = fmap (\s -> (i, prio, (s,op))) (operator' op)
 
 data ZZ = ZZ { z_op :: NodeName
@@ -74,18 +76,24 @@ get_prototype :: String -> Perl5Parser (Maybe String)
 get_prototype f = do state <- getState
                      return$ Map.lookup f (prototypes state)
 
+preParsers :: [ Perl5Parser (OpType, Integer, (Node, String)) ]
 (preParsers, postParsers) = 
     map_t2 (map operator_to_parser) $ partition (\(i, _, _) -> i == Prefix) $ long_first $ flatten operators
     where      
       long_first = sortBy (\ (_, _, op1) (_, _, op2) -> compare (length op2) (length op1))
       flatten = concatMap (\(i, prio, ops) -> map (\op -> (i, prio, op)) ops)
 
-option_expr = option [] lexpr
-paren_expr = seQ [ operator "(", lexpr, operator ")" ]
-paren_option_expr = seQ [ operator "(", option_expr, operator ")" ]
 
+paren_expr = seQ [ op "(", lexpr, op ")" ]
+paren_option_expr = seQ [ op "(", option_expr, op ")" ]
+
+option_expr :: Perl5Parser [Node]
+option_expr = option [] lexpr
+
+lexpr :: Perl5Parser [Node]
 lexpr = toList expr
 
+expr :: Perl5Parser Node
 expr = newNode"expr"$ fmap reduce expr_
     where
       expr_ :: Perl5Parser ZZ
@@ -95,7 +103,7 @@ expr = newNode"expr"$ fmap reduce expr_
       term_with_pre = 
                   term_with_pre_op
               <|> ampersand_call
-              <|> fmap (\t -> toZZ [t]) term 
+              <|> fmap toZZ (toList term)
               <|> bareword_call
 
       term_with_pre_op = do l <- choice preParsers
@@ -107,12 +115,14 @@ expr = newNode"expr"$ fmap reduce expr_
 
       bareword_call = do f <- word_raw
                          s <- spaces_comments
-                         let e = Node(NodeName"bareword", map Token (f:s))
+                         let e = Tokens (Word f : s)
                          call_paren e <|> bareword_call_proto f e
 
-      call_paren f = do l <- paren_option_expr
-                        to_call f prio_max (Just$ toZZ l)
+      call_paren :: Node -> Perl5Parser ZZ
+      call_paren f = do l <- newNode"paren_option_expr"$ paren_option_expr
+                        to_call f prio_max (Just$ toZZ [l])
 
+      bareword_call_proto :: String -> Node -> Perl5Parser ZZ
       bareword_call_proto f e = 
           do proto <- get_prototype f
              choice (choices proto)
@@ -140,7 +150,7 @@ expr = newNode"expr"$ fmap reduce expr_
           if isNothing child then return call else get_middle call
 
       toZZ l = ZZ (NodeName"") Nothing l Nothing prio_max AssocNone 0
-      toZZ_ (fixity, prio, (l,s)) = ZZ (NodeName s) Nothing l Nothing prio (fixity_to_associativity fixity) 0
+      toZZ_ (fixity, prio, (l,s)) = ZZ (NodeName s) Nothing [l] Nothing prio (fixity_to_associativity fixity) 0
 
       get_middle z =
           do z' <- middle z

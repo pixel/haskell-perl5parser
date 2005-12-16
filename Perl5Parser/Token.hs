@@ -1,6 +1,7 @@
 module Perl5Parser.Token
     ( p_Token
     , p_Pod
+    , p_Label
     ) where
 
 import Perl5Parser.Types
@@ -12,45 +13,43 @@ import qualified Perl5Parser.Token.Regexp
 import qualified Perl5Parser.Token.HereDoc
 
 
-p_Pod :: Perl5Parser Node
-p_Pod = newNode"Token::Pod" (toTokens $ pcons p_Pod_raw spaces_comments)
+p_Pod :: Perl5Parser [TokenT]
+p_Pod = pcons (fmap Pod p_Pod_raw) spaces_comments
 p_Pod_raw = seQ 
          [ seQ [ lineBegin (charl '='), toList (satisfy isAlpha) ]
          , anyTill (try_string "\n=cut")
          , anyTill (charl '\n')
          ]
 
+p_Label :: Perl5Parser [TokenT]
+p_Label = pcons p_Label_raw spaces_comments
+p_Label_raw = try$ do s <- word_raw
+                      sp <- spaces_no_nl
+                      operator ":"
+                      return$ Label s sp
 
-fname s = fmap (\v -> (NodeName s, v))
-
-p_Token :: Perl5Parser Node
-p_Token = do (name, l) <- p
-             l2 <- spaces_comments
-             return$ Node(name, map Token (l ++ l2))
+p_Token :: Perl5Parser [TokenT]
+p_Token = do pcons p spaces_comments
     where p = 
-                  fmap (\(n,s) -> (n,[s])) p1 
-              <|> p2
-              <|> fmap (\(n,(_,s)) -> (n,[s])) p3
+                  fmap to_Quote Perl5Parser.Token.Quote.p_Interpolate
+              <|> fmap to_Quote Perl5Parser.Token.Quote.p_Literal
+              <|> fmap to_Quote Perl5Parser.Token.Quote.p_Single
+              <|> fmap to_Quote Perl5Parser.Token.Quote.p_Double
 
-          p1 = 
-                  fname"Token::Number" Perl5Parser.Token.Number.p_Number
-              <|> fname"Token::Number" Perl5Parser.Token.Number.p_VersionNumber
+              <|> fmap (Number NormalNumber) Perl5Parser.Token.Number.p_Number
+              <|> fmap (Number VersionNumber) Perl5Parser.Token.Number.p_VersionNumber
 
-          p2 = 
-                  fname"Token::Regexp::Match" Perl5Parser.Token.Regexp.p_Match
-              <|> fname"Token::Regexp::Substitute" Perl5Parser.Token.Regexp.p_Substitute
-              <|> fname"Token::Regexp::Transliterate" Perl5Parser.Token.Regexp.p_Transliterate
-              <|> fname"Token::Quote::Interpolate" Perl5Parser.Token.Quote.p_Interpolate
-              <|> fname"Token::Quote::Literal" Perl5Parser.Token.Quote.p_Literal
-              <|> fname"Token::QuoteLike::Words" Perl5Parser.Token.QuoteLike.p_Words
+              <|> fmap Regexp Perl5Parser.Token.Regexp.p_Match
+              <|> fmap Regexp Perl5Parser.Token.Regexp.p_Substitute
+              <|> fmap Regexp Perl5Parser.Token.Regexp.p_Transliterate
+              <|> fmap to_QuoteLike Perl5Parser.Token.QuoteLike.p_Words
 
                   -- !! HereDoc before Readline and Glob !!
-              <|> fname"Token::QuoteLike::HereDoc" Perl5Parser.Token.HereDoc.p_HereDoc
+              <|> Perl5Parser.Token.HereDoc.p_HereDoc
 
-          p3 = 
                   -- !! Readline before Glob !!
-                  fname"Token::QuoteLike::Readline" Perl5Parser.Token.QuoteLike.p_Readline
-              <|> fname"Token::QuoteLike::Glob" Perl5Parser.Token.QuoteLike.p_Glob
+              <|> fmap to_QuoteLike Perl5Parser.Token.QuoteLike.p_Readline
+              <|> fmap to_QuoteLike Perl5Parser.Token.QuoteLike.p_Glob
 
-              <|> fname"Token::Quote::Single" Perl5Parser.Token.Quote.p_Single
-              <|> fname"Token::Quote::Double" Perl5Parser.Token.Quote.p_Double
+          to_Quote (cc, s) = Quote cc s
+          to_QuoteLike (cc, s) = QuoteLike cc s

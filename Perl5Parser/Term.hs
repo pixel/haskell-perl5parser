@@ -9,6 +9,9 @@ import {-# SOURCE #-} Perl5Parser.Expr
 import {-# SOURCE #-} Perl5Parser.Lines
 
 
+op = toList . operator_node
+
+term :: Perl5Parser Node
 term = anonymous
        <|> declvar
        <|> newNode"grouped" (seQ [ paren_option_expr, option [] paren_next_slice ])
@@ -18,27 +21,25 @@ term = anonymous
        <|> star
        <|> hash
        <|> array_maybe_slice
-       <|> Perl5Parser.Token.p_Token
+       <|> fmap Tokens Perl5Parser.Token.p_Token
 
 
 -- | Constructors for anonymous data
-anonymous =     newNode"[]" (seQ [ operator "[", option_expr, operator "]" ])
-            <|> newNode"{}" (seQ [ operator "{", option_expr, operator "}" ])
+anonymous =     newNode"[]" (seQ [ op "[", option_expr, op "]" ])
+            <|> newNode"{}" (seQ [ op "{", option_expr, op "}" ])
             <|> anonymous_sub
 
-declvar = newNode"declvar"$ seQ 
-          [ any_symbol [ "my", "our", "local" ]
-          , lexpr
-          ]
+declvar = newNode"declvar"$ pcons (any_symbol_node [ "my", "our", "local" ]) lexpr
 
-paren_next_slice = seQ [ operator "[", option_expr, operator "]" ]
+
+paren_next_slice = seQ [ op "[", option_expr, op "]" ]
 
 array_maybe_slice = do a <- array
                        option a (array_slice a)
     where
       array_slice a = newNode"slice"$ fmap (a :) p
-      p = seQ [ operator "[", option_expr, operator "]" ]
-          <|> seQ [ operator "{", option_expr, operator "}" ]
+      p = seQ [ op "[", option_expr, op "]" ]
+          <|> seQ [ op "{", option_expr, op "}" ]
 
 {-
 func_maybe_para = do f <- func
@@ -61,7 +62,6 @@ array    = var_context "@"
 func     = var_context "&"
 
 var_context :: String -> Perl5Parser Node
-var_context s = newNode s $ seQ 
-                [ try$ operator s
-                , word <|> seQ [ operator "{", option_expr, operator "}" ]
-                ]
+var_context s = newNode s $ pcons
+                              (try$ operator_node s)
+                              (toList word_node <|> seQ [ op "{", option_expr, op "}" ])

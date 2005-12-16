@@ -10,11 +10,12 @@ module Perl5Parser.ParserHelper
     , notWord, wordAny, digit_
     , word_raw, comment, spaces_no_nl, spaces, spaces_comments_normal, endWord
     --
-    , spaces_comments, spaces_comments_with_here_doc
-    , word, symbol, any_symbol, operator, operator'
+    , spaces_token, word_raw_token, spaces_comments, spaces_comments_with_here_doc
+    , word, symbol, any_symbol, operator
     , ident
     --
-    , toListToken, toTokens, seq_toTokens, newNode
+    , operator_node, symbol_node, any_symbol_node, word_node, newNode
+    , toNodes
     ) where
 
 import Data.Char (isAlphaNum, isDigit, isAlpha, isSpace)
@@ -120,57 +121,66 @@ spaces_no_nl = manyl (oneOf " \t")
 spaces :: CharParser st [String]
 spaces = manyl space <?> ""
 
-spaces_comments_normal :: CharParser st [String]
-spaces_comments_normal = seQ [ spaces, manY $ seQ [ toList comment, spaces ] ]
 
 -- | fail if after running p, we are not at the end of a word
 endWord :: CharParser st a -> CharParser st a
 endWord p = try $ do { r <- p; notFollowedBy (satisfy isWordAny); return r }
 
 
+word_raw_token = fmap Word word_raw
+spaces_token = fmap (map Whitespace) spaces
+comment_token = fmap Comment comment
 
-spaces_comments :: Perl5Parser [String]
+spaces_comments_normal :: CharParser st [TokenT]
+spaces_comments_normal = seQ [ spaces_token, manY $ seQ [ toList comment_token, spaces_token ] ]
+
+
+spaces_comments :: Perl5Parser [TokenT]
 spaces_comments = do state <- getState
                      case next_line_is_here_doc state of
                        Nothing -> spaces_comments_normal
                        Just limit -> spaces_comments_with_here_doc limit
 
-spaces_comments_with_here_doc limit = do l <- spaces_no_nl
+spaces_comments_with_here_doc :: String -> Perl5Parser [TokenT]
+spaces_comments_with_here_doc limit = do l <- fmap(map Whitespace) spaces_no_nl
                                          l2 <- option [] get_here_doc
                                          return$ l ++ l2
     where get_here_doc = do lookAhead newline
                             updateState (\s -> s { next_line_is_here_doc = Nothing })
                             here_doc <- anyTill (try_string ("\n" ++ limit ++ "\n"))
                             l2 <- spaces_comments_normal
-                            return$ [here_doc] ++ l2
+                            return$ [HereDocValue here_doc] ++ l2
 
                          
-word = toTokens (pcons word_raw spaces_comments)
+word :: Perl5Parser [TokenT]
+word = pcons word_raw_token spaces_comments
 
-symbol :: String -> Perl5Parser [Node]
-symbol s = toTokens$ pcons (endWord (string s)) spaces_comments
+symbol :: String -> Perl5Parser [TokenT]
+symbol s = pcons (fmap Symbol $ endWord (string s)) spaces_comments
 
-any_symbol :: [String] -> Perl5Parser [Node]
+any_symbol :: [String] -> Perl5Parser [TokenT]
 any_symbol = choice . map symbol
 
-operator :: String -> Perl5Parser [Node]
-operator s = toTokens$ pcons (try_string s) spaces_comments
-
-operator' s = if isWordAny (last s) then symbol s else try $ operator s
+operator :: String -> Perl5Parser [TokenT]
+operator s = pcons (fmap Operator $ try_string s) spaces_comments
 
 -- | ::a  b  c::  d::e
+ident :: Perl5Parser [TokenT]
 ident = seQ [ option [] (operator "::"), word, manY (seQ [ operator "::", word ]) ]
 
 
 
-toListToken :: Perl5Parser String -> Perl5Parser [Node]
-toListToken = fmap (\c -> [Token c])
+--
+--seq_toTokens :: [Perl5Parser String] -> Perl5Parser [Node]
+--seq_toTokens = fmap (map Token) . sequence
 
-toTokens :: Perl5Parser [String] -> Perl5Parser [Node]
-toTokens = fmap (map Token)
-
-seq_toTokens :: [Perl5Parser String] -> Perl5Parser [Node]
-seq_toTokens = fmap (map Token) . sequence
+operator_node s = fmap Tokens $ operator s
+symbol_node s = fmap Tokens $ symbol s
+any_symbol_node l = fmap Tokens $ any_symbol l
+word_node = fmap Tokens word
 
 newNode :: String -> Perl5Parser [Node] -> Perl5Parser Node
 newNode s r = fmap (\l -> show4debug "newNode: " (Node(NodeName s, l))) r <?> s
+
+toNodes :: Perl5Parser [TokenT] -> Perl5Parser [Node]
+toNodes = toList . fmap Tokens
