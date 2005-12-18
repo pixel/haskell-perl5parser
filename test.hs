@@ -8,7 +8,7 @@ import qualified Perl5Parser.Token
 must_be_same s s' = if s /= s' then "NOT OK: " ++ s' ++ " instead of " ++ s ++ "\n" else ""
 
 error_if "" = ""
-error_if s = "" -- error s
+error_if s = error s
 
 
 ok_numbers = "0 1 1. 1.2 1E3 1.E3 0XFFF 0xFf1 0755"
@@ -36,8 +36,8 @@ ok_exprs = [ ("1+2", "1+2")
            , ("1 ? 2 : 3 ? 4 : 5", "1 ? 2 : (3 ? 4 : 5)")
            , ("1 ? 2 ? 3 : 4 : 5", "1 ? (2 ? 3 : 4 ): 5")
            , ("f(1)", "")
---           , ("f 1", "")
---           , ("f 1, 2", "")
+           , ("f 1", "")
+           , ("f 1, 2", "")
            , ("1 ? f 2 : 3", "1 ? f 2 : 3")
            ]
 
