@@ -66,7 +66,7 @@ operator_to_parser (i, prio, op) = fmap (\s -> (i, prio, (s,op))) (operator' op)
 
 data ZZ = ZZ { z_op :: NodeName
              , z_left :: Maybe ZZ
-             , _z_middle :: [Node]
+             , z_middle :: [Node]
              , z_right :: Maybe ZZ
              , z_priority :: Integer
              , z_associativity :: AssocType
@@ -180,42 +180,32 @@ expr = newNode"expr"$ fmap reduce expr_
              return (add_maybe e (toZZ_ op) t) { z_question_opened = question_opened' }
 
       reduce :: ZZ -> [Node]
-      reduce e = seq (show4debug"to_l" e) $ show4debug"to_l gives"$ to_l e
+      reduce e = reduce_ e
           where
             maybe_reduce = maybe [] reduce
 
-            to_l :: ZZ -> [Node]
-            to_l (ZZ _ Nothing middle Nothing _ _ _) = middle
-            to_l (ZZ (NodeName ":") (Just (ZZ (NodeName "?") left op1 middle_para _ _ _)) op2 right _ _ _) = 
-                [ Call(NodeName "?:", maybe [] reduce left ++ op1 ++ maybe_reduce middle_para ++ op2 ++ maybe_reduce right) ]
-
-{-
-                -- here we have a left-hand comb with either "?" or ":"
-                -- ":" + "?" must be combinated and given to deeper "?"
-                where combinate (ZZ (NodeName ":") (ZZ (NodeName "?") left op1 middle_para _ _ _) op2 right _ _ _) =
-                          
-                case left of
-                  Just (ZZ (NodeName "?") left middle2 middle_right _ _ _) ->
-                      case to_l left of
-                      to_l (left' { z_op = NodeName "?:", z_left = (middle' ++ left_right ++ middle) (to_l right)
--}
-            to_l (ZZ op left middle right _ _ _) = [ Call(op, maybe_reduce left ++ middle ++ maybe_reduce right) ]
---                maybe [] to_l left ++ [(op, middle ++ maybe [] reduce right)]
-
---            reduce_l left l@((NodeName"?", _) : _) = reduce_l left (group left l)
---                where group left ((NodeName"?", l) : sub) =
---                          case show4debug"XXX" $ group sub of 
---                            ((NodeName"?", l2) : (NodeName ":", l3) : sub3) -> 
---                                let n = [ Call(NodeName"?:", l ++ l2 ++ l3) ] in
---                                (NodeName":", n) : sub3
---                            ((NodeName":", l2) : sub3) -> 
---                                (NodeName"?:", l ++ l2) : sub3
---                            _ -> error "missing \":\""
---                      group [ (NodeName"?", _) ] = error "missing \":\""
---                      group z = z
---            reduce_l accu [] = accu
---            reduce_l [] ((NodeName"", l) : sub) = reduce_l l sub
---            reduce_l left ((op, l) : sub) = reduce_l [Call(op, left ++ l)] sub
+            reduce_ :: ZZ -> [Node]
+            reduce_ (ZZ _ Nothing middle Nothing _ _ _) = middle
+            reduce_ z@(ZZ (NodeName "?") _ _ _ _ _ _) = reduce_ (group z)
+                where
+                  group z@(ZZ (NodeName "?") _ op1 (Just right) _ _ _) = 
+                      case group right of 
+                        ZZ (NodeName ":") middle_para op2 (Just ri@(ZZ (NodeName ":") _ _ _ _ _ _)) _ _ _ ->
+                            ri { z_left = Just$ z { z_op = NodeName "?:"
+                                                   , z_middle = op1 ++ maybe_reduce middle_para ++ op2
+                                                   , z_right = fmap group (z_left ri)
+                                                   } }
+                        ZZ (NodeName ":") middle_para op2 right _ _ _ ->
+                            z { z_op = NodeName "?:"
+                              , z_middle = op1 ++ maybe_reduce middle_para ++ op2
+                              , z_right = fmap group right
+                              }
+                        _ -> error "missing \":\""
+                  group z = 
+                      z { z_left = fmap group (z_left z)
+                        , z_right = fmap group (z_right z)
+                        }
+            reduce_ (ZZ op left middle right _ _ _) = [ Call(op, maybe_reduce left ++ middle ++ maybe_reduce right) ]
 
       add_maybe :: ZZ -> ZZ -> Maybe ZZ -> ZZ
       add_maybe left op Nothing = add_post left op
