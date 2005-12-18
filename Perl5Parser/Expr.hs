@@ -174,7 +174,7 @@ expr = newNode"expr"$ fmap reduce expr_
             to_l :: ZZ -> [Node]
             to_l (ZZ _ Nothing middle Nothing _ _ _) = middle
             to_l (ZZ (NodeName ":") (Just (ZZ (NodeName "?") left op1 middle_para _ _ _)) op2 right _ _ _) = 
-                [ Node(NodeName "?:", maybe [] reduce left ++ op1 ++ maybe_reduce middle_para ++ op2 ++ maybe_reduce right) ]
+                [ Call(NodeName "?:", maybe [] reduce left ++ op1 ++ maybe_reduce middle_para ++ op2 ++ maybe_reduce right) ]
 
 {-
                 -- here we have a left-hand comb with either "?" or ":"
@@ -186,14 +186,14 @@ expr = newNode"expr"$ fmap reduce expr_
                       case to_l left of
                       to_l (left' { z_op = NodeName "?:", z_left = (middle' ++ left_right ++ middle) (to_l right)
 -}
-            to_l (ZZ op left middle right _ _ _) = [ Node(op, maybe_reduce left ++ middle ++ maybe_reduce right) ]
+            to_l (ZZ op left middle right _ _ _) = [ Call(op, maybe_reduce left ++ middle ++ maybe_reduce right) ]
 --                maybe [] to_l left ++ [(op, middle ++ maybe [] reduce right)]
 
 --            reduce_l left l@((NodeName"?", _) : _) = reduce_l left (group left l)
 --                where group left ((NodeName"?", l) : sub) =
 --                          case show4debug"XXX" $ group sub of 
 --                            ((NodeName"?", l2) : (NodeName ":", l3) : sub3) -> 
---                                let n = [ Node(NodeName"?:", l ++ l2 ++ l3) ] in
+--                                let n = [ Call(NodeName"?:", l ++ l2 ++ l3) ] in
 --                                (NodeName":", n) : sub3
 --                            ((NodeName":", l2) : sub3) -> 
 --                                (NodeName"?:", l ++ l2) : sub3
@@ -202,7 +202,7 @@ expr = newNode"expr"$ fmap reduce expr_
 --                      group z = z
 --            reduce_l accu [] = accu
 --            reduce_l [] ((NodeName"", l) : sub) = reduce_l l sub
---            reduce_l left ((op, l) : sub) = reduce_l [Node(op, left ++ l)] sub
+--            reduce_l left ((op, l) : sub) = reduce_l [Call(op, left ++ l)] sub
 
       add_maybe :: ZZ -> ZZ -> Maybe ZZ -> ZZ
       add_maybe left op Nothing = add_post left op

@@ -79,5 +79,6 @@ data TokenT =
 
 data Node = 
     Node(NodeName, [Node])
+  | Call(NodeName, [Node])
   | Tokens [TokenT]
     deriving Show

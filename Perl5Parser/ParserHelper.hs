@@ -3,6 +3,7 @@ module Perl5Parser.ParserHelper
     , anyChar, oneOf, updateState, satisfy, isAlpha, getState, choice, lookAhead
     -- ^ above are re-exported
     --
+    , show4debug_pretty
     , toList, pcons, seQ, manY, manyl, fold_many, lineBegin
     , anyTill, parse
     , isWordAny, isDigit_, isAlpha_, isSpace, balancedDelim
@@ -24,8 +25,15 @@ import Text.ParserCombinators.Parsec (oneOf, GenParser, CharParser, (<?>), many,
       option, getState, updateState, runParser, char, string, getPosition, pzero, newline)
 import Text.ParserCombinators.Parsec.Pos (sourceColumn)
 
+import System.IO.Unsafe (unsafePerformIO)
+import qualified Perl5Parser.Serialize
+
 import Perl5Parser.Common
 import Perl5Parser.Types
+
+
+show4debug_pretty :: Perl5Parser.Serialize.Serialize a => String -> a -> a
+show4debug_pretty s e = seq (unsafePerformIO $ putStrLn (s ++ ": " ++ Perl5Parser.Serialize.with_parentheses e)) e
 
 
 toList :: GenParser tok st a -> GenParser tok st [a]

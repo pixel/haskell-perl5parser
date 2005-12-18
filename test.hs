@@ -1,8 +1,15 @@
-import Perl5Parser.Types
+import System (getArgs)
+--import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 import Perl5Parser.Document
-import qualified Perl5Parser.Serialize
+import Perl5Parser.Serialize
 import qualified Perl5Parser.Token
+
+must_be_same s s' = if s /= s' then "NOT OK: " ++ s' ++ " instead of " ++ s ++ "\n" else ""
+
+error_if "" = ""
+error_if s = "" -- error s
+
 
 ok_numbers = "0 1 1. 1.2 1E3 1.E3 0XFFF 0xFf1 0755"
 
@@ -11,29 +18,37 @@ ok_string = "'' 'a' 'a\\b' '\\'' '\\a' 'a\\bc' 'foo'"
 ok_version_numbers = "v5 v5.6 5 5. 5.6 5.6.1"
 
 test_tokens = 
-    do parse_and_verif ok_numbers
-       parse_and_verif ok_string
-       parse_and_verif ok_version_numbers
+    parse_and_verif ok_numbers ++ 
+    parse_and_verif ok_string ++
+    parse_and_verif ok_version_numbers
     where
-         parse_and_verif s = 
-             if s /= s' then putStrLn ("NOT OK: " ++ s' ++ " instead of " ++ s) else return ()
+         parse_and_verif s = must_be_same s s'
              where
-               s' :: String
-               s' = Perl5Parser.Serialize.to_s $ parse parser' initial_state s
+               s' = verbatim $ parse parser' initial_state s
                parser' = manY $ Perl5Parser.Token.p_Token
 --------------------------------------------------------------------------------
-ok_exprs = ("1+2", "1+2")
+ok_exprs = [ ("1+2", "1+2")
+           , ("1-2-3", "(1-2)-3")
+           , ("1+2*3", "1+(2*3)")
+           , ("1 + 2 * 3 + 4 || 5 * 6", "((1 + (2 * 3 ))+ 4 )|| (5 * 6)")
+           , ("~ 1 + not 2 + 3, 4 and 5", "((~ 1 )+ (not ((2 + 3), 4 )))and 5")
+           , ("1?2:3", "1?2:3")
+           , ("1 ? 2 : 3 ? 4 : 5", "1 ? 2 : (3 ? 4 : 5)")
+           , ("1 ? 2 ? 3 : 4 : 5", "1 ? (2 ? 3 : 4 ): 5")
+           , ("f(1)", "")
+--           , ("f 1", "")
+--           , ("f 1, 2", "")
+           , ("1 ? f 2 : 3", "1 ? f 2 : 3")
+           ]
 
-test_exprs = test ok_exprs
-    where test (input, _wanted) =
-              let s = parse prog initial_state input in
-              putStrLn $ Perl5Parser.Serialize.to_s (s :: Node)
+test_exprs = concat $ map test ok_exprs
+    where test (input, wanted) =
+              let ast = parse prog initial_state input in
+              let s' = verbatim ast in
+              let s_prio = with_parentheses ast in
+              must_be_same s' input ++ must_be_same s_prio wanted
 
--- 1 + 2 * 3 + 4 || 5 * 6
--- 1?2:3
--- !2
--- 1-2-3
--- ~ 1 + not 2 + 3, 4 and 5;  # ((~1 + not((2 + 3), 4)) and 5)
+-- 
 -- 1 ? g 5 : 6;
 -- 1 ? 2 : 3 ? 4 : 5 ;    # ?[ 1 "?" " " :[ 2 ":" " " ?[ 3 "?" " " :[ 4 ":" " " 5 ] ] ] ]
 -- 1 ? 2 ? 3 : 4 : 5 ;    # ?[ 1 "?" " " ?[ 2 "?" " " :[ 3 ":" " " :[ 4 ":" " " 5 ] ] ] ]
@@ -45,15 +60,15 @@ test_exprs = test ok_exprs
 
 
 
-_test = 
+test :: String -> IO ()
+test test_file =
     do s <- readFile test_file
        let ast = parse prog initial_state s
+       writeFile (test_file ++ ".new") (verbatim ast)
        print ast
-    where
-      test_file = "/tmp/t.pl"
-      --test_file = "/home/pixel/cooker/soft/perl-MDK-Common/MDK/Common/File.pm"
 
 
-main = test_tokens 
-       >> test_exprs
-       -- >> test
+main = 
+--    seq (error_if test_tokens) $ 
+--    seq (error_if test_exprs) $ 
+    fmap head getArgs >>= test
