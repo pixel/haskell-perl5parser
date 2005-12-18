@@ -8,6 +8,7 @@ import qualified Data.Map as Map
 
 import Perl5Parser.Common
 import Perl5Parser.Types
+import Perl5Parser.Serialize
 import Perl5Parser.ParserHelper
 import Perl5Parser.Term
 import Perl5Parser.Prototype
@@ -70,7 +71,16 @@ data ZZ = ZZ { z_op :: NodeName
              , z_priority :: Integer
              , z_associativity :: AssocType
              , z_question_opened :: Integer
-             } deriving Show
+             }
+
+show_long_ZZ = False
+
+instance Show ZZ where
+    show (ZZ (NodeName"") Nothing middle Nothing _ _ _) = verbatim middle
+    show (ZZ op left middle right prio asso question_opened) =
+        "ZZ{ op = " ++ show op ++ ", left = " ++ show left ++ ", middle = " ++ verbatim middle ++ ", right = " ++ show right ++ 
+                    if show_long_ZZ then ", priority = " ++ show prio ++ ", asso = " ++ show asso ++ ", question_opened = " ++ show question_opened ++ "}"
+                       else "}"
 
 get_prototype :: String -> Perl5Parser (Maybe String)
 get_prototype f = do state <- getState
@@ -237,7 +247,8 @@ expr = newNode"expr"$ fmap reduce expr_
               op { z_right = Just right }
 
       add_post left op = -- ^ here we know that (z_left op) is Nothing
-          if z_priority op < z_priority left then
+        seq (show4debug"add_post"(left,op)) $
+          if z_priority op < z_priority left || z_priority op == z_priority left && z_associativity op == AssocRight then
               left { z_right = Just (add_post (fromJust$ z_right left) op) }
           else 
               op { z_left = Just left }
