@@ -29,16 +29,17 @@ test_tokens =
 --------------------------------------------------------------------------------
 ok_exprs = [ ("1+2", "1+2")
            , ("1-2-3", "(1-2)-3")
+           , ("1**2**3", "1**(2**3)")
            , ("1+2*3", "1+(2*3)")
            , ("1 + 2 * 3 + 4 || 5 * 6", "((1 + (2 * 3 ))+ 4 )|| (5 * 6)")
            , ("~ 1 + not 2 + 3, 4 and 5", "((~ 1 )+ (not ((2 + 3), 4 )))and 5")
            , ("1?2:3", "1?2:3")
            , ("1 ? 2 : 3 ? 4 : 5", "1 ? 2 : (3 ? 4 : 5)")
            , ("1 ? 2 ? 3 : 4 : 5", "1 ? (2 ? 3 : 4 ): 5")
-           , ("f(1)", "")
-           , ("f 1", "")
-           , ("f 1, 2", "")
-           , ("1 ? f 2 : 3", "1 ? f 2 : 3")
+           , ("f(1)", "f(1)")
+           , ("f 1", "f 1")
+           , ("f 1, 2", "f (1, 2)")
+           , ("1 ? f 2 : 3", "1 ? (f 2 ): 3")
            ]
 
 test_exprs = concat $ map test ok_exprs
@@ -46,12 +47,9 @@ test_exprs = concat $ map test ok_exprs
               let ast = parse prog initial_state input in
               let s' = verbatim ast in
               let s_prio = with_parentheses ast in
-              must_be_same s' input ++ must_be_same s_prio wanted
+              must_be_same input s' ++ must_be_same wanted s_prio
 
 -- 
--- 1 ? g 5 : 6;
--- 1 ? 2 : 3 ? 4 : 5 ;    # ?[ 1 "?" " " :[ 2 ":" " " ?[ 3 "?" " " :[ 4 ":" " " 5 ] ] ] ]
--- 1 ? 2 ? 3 : 4 : 5 ;    # ?[ 1 "?" " " ?[ 2 "?" " " :[ 3 ":" " " :[ 4 ":" " " 5 ] ] ] ]
 -- $foo ? @l : join '', @l;
 -- 
 -- f($a ? g $b, $c ? $d : $e : $f);
@@ -65,10 +63,9 @@ test test_file =
     do s <- readFile test_file
        let ast = parse prog initial_state s
        writeFile (test_file ++ ".new") (verbatim ast)
-       print ast
+       putStrLn (with_parentheses ast) >> print ast
 
 
 main = 
---    seq (error_if test_tokens) $ 
---    seq (error_if test_exprs) $ 
-    fmap head getArgs >>= test
+    do fmap head getArgs >>= test
+       seq (error_if test_tokens) $ seq (error_if test_exprs) $ return ()
