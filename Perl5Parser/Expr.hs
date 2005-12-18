@@ -111,7 +111,7 @@ expr = newNode"expr"$ fmap reduce expr_
                             get_middle (add_pre (toZZ_ l) t)
 
       ampersand_call = do f <- func
-                          call_paren f <|> to_call f prio_max Nothing
+                          call_paren f <|> to_call_no_para f
 
       bareword_call = do f <- word_raw
                          s <- spaces_comments
@@ -120,7 +120,7 @@ expr = newNode"expr"$ fmap reduce expr_
 
       call_paren :: Node -> Perl5Parser ZZ
       call_paren f = do l <- newNode"paren_option_expr"$ paren_option_expr
-                        to_call f prio_max (Just$ toZZ [l])
+                        to_call f prio_max (toZZ [l])
 
       bareword_call_proto :: String -> Node -> Perl5Parser ZZ
       bareword_call_proto f e = 
@@ -133,21 +133,25 @@ expr = newNode"expr"$ fmap reduce expr_
                   (min, max) = fromMaybe (0, 99) (proto >>= parse_prototype)
                   prio = if max == 1 then prio_named_unary else prio_normal_call
 
-                  no_para = to_call e prio_max Nothing
+                  no_para = to_call_no_para e
 
                   with_para = do b <- block
                                  with_block_para b
                               <|> do t <- term_with_pre
-                                     to_call e prio (Just t)
+                                     to_call e prio t
 
                   with_block_para b = do lookAhead (satisfy (/= ','))
                                          t <- term_with_pre -- ^ map { ... } @foo
                                          return$ ZZ (NodeName"call") Nothing (e : b) (Just t) prio AssocNone 0
-                                  <|> do to_call e prio (Just$ toZZ b) -- ^ END { ...}  or  f { a => 1 }, ...
+                                  <|> do to_call e prio (toZZ b) -- ^ END { ...}  or  f { a => 1 }, ...
+
+      to_call_no_para f =
+          let call = ZZ (NodeName"call") Nothing [f] Nothing prio_max AssocNone 0 in
+          return call
 
       to_call f prio child = 
           let call = ZZ (NodeName"call") Nothing [f] Nothing prio AssocNone 0 in
-          if isNothing child then return call else get_middle call
+          get_middle (add_pre call child)
 
       toZZ l = ZZ (NodeName"") Nothing l Nothing prio_max AssocNone 0
       toZZ_ (fixity, prio, (l,s)) = ZZ (NodeName s) Nothing [l] Nothing prio (fixity_to_associativity fixity) 0
@@ -166,8 +170,7 @@ expr = newNode"expr"$ fmap reduce expr_
              return (add_maybe e (toZZ_ op) t) { z_question_opened = question_opened' }
 
       reduce :: ZZ -> [Node]
-      reduce e = to_l e
---reduce_l [] (seq (show4debug"to_l" e) $ show4debug"to_l gives"$ to_l e)
+      reduce e = seq (show4debug"to_l" e) $ show4debug"to_l gives"$ to_l e
           where
             maybe_reduce = maybe [] reduce
 

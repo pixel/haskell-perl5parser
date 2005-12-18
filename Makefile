@@ -5,11 +5,14 @@ Perl5Parser_O = $(Perl5Parser_HS:%.hs=%.o)
 all: TAGS test
 	./test /tmp/t.pl && diff -u /tmp/t.pl /tmp/t.pl.new
 
-test: $(Perl5Parser_O) test.hs
+test: $(Perl5Parser_O) test.o
 	ghc -W $^ -o $@ -package parsec
 
 %.o: %.hs
 	ghc -W -c $<
+
+test.o: test.hs
+	ghc -c $<
 
 %.o-boot: %.hs-boot
 	ghc -W -c $<
