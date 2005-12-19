@@ -45,6 +45,8 @@ ok_exprs = [ ("1+2", "1+2")
            , ("1 ? f 2 : 3", "1 ? (f 2 ): 3")
            , ("f 1 ? 2 : 3", "f (1 ? 2 : 3)")
            , ("1 ? 2 : f 3, 4", "1 ? 2 : (f (3, 4))")
+           , ("1 ? f 2, 3 : 4", "1 ? (f (2, 3 )): 4")
+           , ("1 ? f 2, 3 ? 4 : 5 : 6", "1 ? (f (2, (3 ? 4 : 5 ))): 6") -- perl doesn't parse it correctly, should we also fail?
            ]
 
 test_exprs = concat $ map test ok_exprs
@@ -53,15 +55,6 @@ test_exprs = concat $ map test ok_exprs
               let s' = verbatim ast in
               let s_prio = with_parentheses ast in
               must_be_same input s' ++ must_be_same wanted s_prio
-
--- 
--- $foo ? @l : join '', @l;
--- 
--- f($a ? g $b, $c ? $d : $e : $f);
-
-
-
-
 
 test :: String -> IO ()
 test test_file =
