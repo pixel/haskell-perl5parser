@@ -9,8 +9,6 @@ import {-# SOURCE #-} Perl5Parser.Expr
 import {-# SOURCE #-} Perl5Parser.Lines
 
 
-op = toList . operator_node
-
 term :: Perl5Parser Node
 term = anonymous
        <|> declvar
@@ -27,21 +25,21 @@ term = anonymous
 grouped = newNode"grouped" (seQ [ paren_option_expr, option [] paren_next_slice ])
 
 -- | Constructors for anonymous data
-anonymous =     newNode"[]" (seQ [ op "[", option_expr, op "]" ])
-            <|> newNode"{}" (seQ [ op "{", option_expr, op "}" ])
+anonymous =     newNode"[]" squareB_option_expr
+            <|> newNode"{}" curlyB_option_expr
             <|> anonymous_sub
 
 declvar = newNode"declvar"$ pcons (any_symbol_node [ "my", "our", "local" ]) lexpr
 
 
-paren_next_slice = seQ [ op "[", option_expr, op "]" ]
+paren_next_slice = squareB_option_expr
 
 array_maybe_slice = do a <- array
                        option a (array_slice a)
     where
       array_slice a = newNode"slice"$ fmap (a :) p
-      p = seQ [ op "[", option_expr, op "]" ]
-          <|> seQ [ op "{", option_expr, op "}" ]
+      p = squareB_option_expr
+          <|> curlyB_option_expr
 
 
 ----------------------------------------
@@ -55,4 +53,4 @@ func     = var_context "&"
 var_context :: String -> Perl5Parser Node
 var_context s = newNode s $ pcons
                               (try$ operator_node s)
-                              (toNodes Perl5Parser.Token.p_Ident <|> seQ [ op "{", option_expr, op "}" ])
+                              (toNodes Perl5Parser.Token.p_Ident <|> curlyB_option_expr)
