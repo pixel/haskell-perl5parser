@@ -166,10 +166,11 @@ expr = newNode"expr"$ fmap reduce expr_
       toZZ l = ZZ (NodeName"") Nothing l Nothing prio_max AssocNone 0
       toZZ_ (fixity, prio, (l,s)) = ZZ (NodeName s) Nothing [l] Nothing prio (fixity_to_associativity fixity) 0
 
-      get_middle z =
-          do z' <- middle z
-             seq (show4debug"get_middle" (z, z')) $ if z_priority z' == z_priority z then get_middle z' else return z'
-          <|> return z
+      get_middle z = do z' <- middle z
+                        seq (show4debug"get_middle" (z, z')) $ if z_priority z' == z_priority z then get_middle z' else return (reduce_inside z')
+                     <|> return (reduce_local z)
+          where reduce_local z = toZZ (reduce z)
+                reduce_inside z = z { z_left = fmap reduce_local (z_left z) }
                  
       middle e = 
           let postParsers' = if z_question_opened e > 0 then postParsers ++ [ operator_to_parser (infixRight, 18, ":") ] else postParsers in
