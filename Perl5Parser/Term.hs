@@ -14,7 +14,7 @@ op = toList . operator_node
 term :: Perl5Parser Node
 term = anonymous
        <|> declvar
-       <|> newNode"grouped" (seQ [ paren_option_expr, option [] paren_next_slice ])
+       <|> grouped
 
        <|> arraylen -- before scalar
        <|> scalar
@@ -23,6 +23,8 @@ term = anonymous
        <|> array_maybe_slice
        <|> fmap Tokens Perl5Parser.Token.p_Token
 
+
+grouped = newNode"grouped" (seQ [ paren_option_expr, option [] paren_next_slice ])
 
 -- | Constructors for anonymous data
 anonymous =     newNode"[]" (seQ [ op "[", option_expr, op "]" ])
@@ -41,18 +43,7 @@ array_maybe_slice = do a <- array
       p = seQ [ op "[", option_expr, op "]" ]
           <|> seQ [ op "{", option_expr, op "}" ]
 
-{-
-func_maybe_para = do f <- func
-                     option f (para f)
-    where
-      para f = newNode"call"$ fmap (f :) paren_option_expr
 
-word_maybe_para = do s <- word
-                     para s <|> newNode"bareword" (return s)
-    where
-      para f = newNode"call"$ fmap (f ++) paren_option_expr
--}
-----------------------------------------
 ----------------------------------------
 arraylen = var_context "$#"
 scalar   = var_context "$"
