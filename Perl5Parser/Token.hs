@@ -35,8 +35,9 @@ p_Ident :: Perl5Parser [TokenT]
 p_Ident = pcons (fmap Word p_Ident_raw) spaces_comments
 
 p_Ident_raw :: Perl5Parser String
-p_Ident_raw = seQ [ try_string "::", option "" p_Ident_raw ]
-              <|> seQ [ word_raw, option "" p_Ident_raw ]
+p_Ident_raw = try $ do s <- seQ [ try_string "::", option "" p_Ident_raw ]
+                            <|> seQ [ word_raw, option "" p_Ident_raw ]
+                       if elem s infix_cmds then pzero else return s
 
 p_Token :: Perl5Parser [TokenT]
 p_Token = do pcons p spaces_comments

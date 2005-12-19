@@ -27,7 +27,7 @@ instance Serialize Node where
         where may_add_para e = if add_para e then "(" ++ s ++ ")" else s
                   where s = with_parentheses e
                         add_para (Tokens _) = False
-                        add_para (Node(NodeName n, _)) = not $ elem n ["paren_option_expr", "$", "@", "%" ]
+                        add_para (Node(NodeName n, _)) = not $ elem n ["paren_option_expr", "$", "@", "%", "{}", "[]" ]
                         add_para _ = True
     with_parentheses (Node(_, l)) = with_parentheses l
     with_parentheses (Tokens l) = with_parentheses l
@@ -48,6 +48,9 @@ instance Serialize TokenT where
     verbatim (Symbol s) = s
     verbatim (Operator s) = s
     verbatim (Pod s) = s
+
+--    with_parentheses (Comment _) = ""
+--    with_parentheses e = verbatim e
 
 to_s_Quote Double s = "\"" ++ s ++ "\""
 to_s_Quote Single s = "'" ++ s ++ "'"

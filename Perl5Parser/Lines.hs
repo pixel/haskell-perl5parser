@@ -110,7 +110,7 @@ sideff = use <|> package <|> infix_cmd
 infix_cmd :: Perl5Parser Node
 infix_cmd = do e <- expr
                option e $ newNode"infix_cmd"$ fmap (e :) infix_cmd_optional
-infix_cmd_optional = seQ [ choice (map symbol_ [ "unless", "while", "until", "for" ]) <?> ""
+infix_cmd_optional = seQ [ choice (map symbol_ infix_cmds) <?> ""
                          , lexpr
                          ]
 

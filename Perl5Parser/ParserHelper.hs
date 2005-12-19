@@ -6,7 +6,7 @@ module Perl5Parser.ParserHelper
     , show4debug_pretty
     , toList, pcons, seQ, manY, manyl, fold_many, lineBegin
     , anyTill, parse
-    , isWordAny, isDigit_, isAlpha_, isSpace, balancedDelim
+    , isWordAny, isDigit_, isAlpha_, isSpace, balancedDelim, infix_cmds
     , charl, oneOfl, try_string
     , notWord, wordAny, digit_
     , word_raw, comment, spaces_no_nl, spaces, spaces_comments_normal, endWord
@@ -95,6 +95,8 @@ balancedDelim c = case c of
                     '[' -> Just ']'
                     ']' -> Just '['
                     _   -> Nothing
+
+infix_cmds = [ "if", "unless", "while", "until", "for" ]
 
 
 -- char parser constructors

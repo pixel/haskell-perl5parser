@@ -177,7 +177,9 @@ expr = newNode"expr"$ fmap reduce expr_
           let postParsers' = if z_question_opened e > 0 then postParsers ++ [ operator_to_parser (infixRight, 18, ":") ] else postParsers in
           do op@(fixity, _prio, (_l,s)) <- choice postParsers'
              return$ show4debug"middle found" s
-             t <- if fixity == Postfix then return Nothing else fmap Just term_with_pre
+             t <- if fixity == Postfix then return Nothing 
+                  else fmap Just term_with_pre <|> 
+                      (if s == "," || s == "=>" then return Nothing else pzero)
              let question_opened' = z_question_opened e + (case s of { "?" -> 1; ":" -> -1; _ -> 0 })
              return (add_maybe e (toZZ_ op) t) { z_question_opened = question_opened' }
 
