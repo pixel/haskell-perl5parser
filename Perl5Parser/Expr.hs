@@ -10,6 +10,7 @@ import Perl5Parser.Common
 import Perl5Parser.Types
 import Perl5Parser.Serialize
 import Perl5Parser.ParserHelper
+import qualified Perl5Parser.Token
 import Perl5Parser.Term
 import Perl5Parser.Prototype
 import {-# SOURCE #-} Perl5Parser.Lines
@@ -50,7 +51,7 @@ operators =
  , (infixLeft , 16, [ "||" ])
  , (infixNone , 17, [ "..", "..." ])
  , (infixRight, 18, [ "?" ])
- , (infixNone , 19, [ "=", "+=", "-=", "*=", ".=", "|=", "&=", "^=", "||=", "&&=", "//=", "**=", "%=", "x=", "<<=", ">>=", ">=", "<=" ])
+ , (infixRight, 19, [ "=", "+=", "-=", "*=", ".=", "|=", "&=", "^=", "||=", "&&=", "//=", "**=", "%=", "x=", "<<=", ">>=", ">=", "<=" ])
  , (infixLeft , 20, [ ",", "=>" ])
 -- normal function call
  , (Prefix    , 22, [ "not" ])
@@ -123,7 +124,7 @@ expr = newNode"expr"$ fmap reduce expr_
       ampersand_call = do f <- func
                           call_paren f <|> to_call_no_para f
 
-      bareword_call = do f <- word_raw
+      bareword_call = do f <- Perl5Parser.Token.p_Ident_raw
                          s <- spaces_comments
                          let e = Tokens (Word f : s)
                          call_paren e <|> bareword_call_proto f e

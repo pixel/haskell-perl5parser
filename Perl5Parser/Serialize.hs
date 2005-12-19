@@ -27,9 +27,8 @@ instance Serialize Node where
         where may_add_para e = if add_para e then "(" ++ s ++ ")" else s
                   where s = with_parentheses e
                         add_para (Tokens _) = False
-                        add_para (Node(NodeName"paren_option_expr", _)) = False
+                        add_para (Node(NodeName n, _)) = not $ elem n ["paren_option_expr", "$", "@", "%" ]
                         add_para _ = True
-
     with_parentheses (Node(_, l)) = with_parentheses l
     with_parentheses (Tokens l) = with_parentheses l
 

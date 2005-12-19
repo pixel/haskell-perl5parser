@@ -57,7 +57,7 @@ prototype = option [] (toNodes $ toList prototype_)
 
 subattrlist = toNodes $ manY (seQ [ operator ":", word ])
 
-package = newNode"package"$ pcons (symbol_node "package") (option [] $ toNodes ident)
+package = newNode"package"$ pcons (symbol_node "package") (toNodes Perl5Parser.Token.p_Ident)
 
 -- | Real conditional expressions
 if_then = newNode"if_then"$ seQ l
@@ -117,7 +117,8 @@ use :: Perl5Parser Node
 use = newNode"use"$ try$ seQ [ symbol_ "use"
                              , toNodes $ seQ [ toList version_number <|> use_module
                                              , spaces_comments ]
+                             , lexpr
                              ]
     where
       version_number = fmap (Number VersionNumber) Perl5Parser.Token.Number.p_VersionNumber
-      use_module = ident
+      use_module = Perl5Parser.Token.p_Ident

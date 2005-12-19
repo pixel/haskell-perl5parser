@@ -1,6 +1,6 @@
 module Perl5Parser.ParserHelper
     ( many, many1, eof, (<|>), (<?>), option, try, char, string, pzero
-    , anyChar, oneOf, updateState, satisfy, isAlpha, getState, choice, lookAhead
+    , anyChar, oneOf, updateState, satisfy, isAlpha, getState, choice, lookAhead, notFollowedBy
     -- ^ above are re-exported
     --
     , show4debug_pretty
@@ -13,7 +13,6 @@ module Perl5Parser.ParserHelper
     --
     , spaces_token, word_raw_token, spaces_comments, spaces_comments_with_here_doc
     , word, symbol, any_symbol, operator
-    , ident
     --
     , operator_node, symbol_node, any_symbol_node, word_node, newNode
     , toNodes
@@ -171,11 +170,6 @@ any_symbol = choice . map symbol
 
 operator :: String -> Perl5Parser [TokenT]
 operator s = pcons (fmap Operator $ try_string s) spaces_comments
-
--- | ::a  b  c::  d::e
-ident :: Perl5Parser [TokenT]
-ident = seQ [ option [] (operator "::"), word, manY (seQ [ operator "::", word ]) ]
-
 
 
 --

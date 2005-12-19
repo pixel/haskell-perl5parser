@@ -64,4 +64,4 @@ func     = var_context "&"
 var_context :: String -> Perl5Parser Node
 var_context s = newNode s $ pcons
                               (try$ operator_node s)
-                              (toList word_node <|> seQ [ op "{", option_expr, op "}" ])
+                              (toNodes Perl5Parser.Token.p_Ident <|> seQ [ op "{", option_expr, op "}" ])

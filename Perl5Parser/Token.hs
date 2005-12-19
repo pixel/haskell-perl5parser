@@ -2,6 +2,7 @@ module Perl5Parser.Token
     ( p_Token
     , p_Pod
     , p_Label
+    , p_Ident, p_Ident_raw
     ) where
 
 import Perl5Parser.Types
@@ -26,7 +27,16 @@ p_Label = pcons p_Label_raw spaces_comments
 p_Label_raw = try$ do s <- word_raw
                       sp <- spaces_no_nl
                       operator ":"
+                      notFollowedBy (char ':') -- for pkg::f()
                       return$ Label s sp
+
+-- | :: a ::b  c:: ::d:: e::f
+p_Ident :: Perl5Parser [TokenT]
+p_Ident = pcons (fmap Word p_Ident_raw) spaces_comments
+
+p_Ident_raw :: Perl5Parser String
+p_Ident_raw = seQ [ try_string "::", option "" p_Ident_raw ]
+              <|> seQ [ word_raw, option "" p_Ident_raw ]
 
 p_Token :: Perl5Parser [TokenT]
 p_Token = do pcons p spaces_comments
