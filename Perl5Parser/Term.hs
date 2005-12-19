@@ -1,5 +1,5 @@
 module Perl5Parser.Term
-    ( term, func
+    ( term, func, scalar
     ) where
 
 import Perl5Parser.Types

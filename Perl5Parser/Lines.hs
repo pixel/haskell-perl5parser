@@ -4,6 +4,7 @@ module Perl5Parser.Lines
 
 import Perl5Parser.Types
 import Perl5Parser.ParserHelper
+import Perl5Parser.Term
 import Perl5Parser.Expr
 import qualified Perl5Parser.Token
 import qualified Perl5Parser.Token.Number
@@ -87,8 +88,9 @@ foreach_novar = try paren_expr <|> seQ
               , op ")"
               ]
 
+-- using "scalar" even if it allows ${xxx} whereas it is not valid perl
 foreach_var = seQ 
-              [ option [] (toList scalar_variable <|> pcons var_declarator (toList scalar_variable))
+              [ option [] (toList scalar <|> pcons var_declarator (toList scalar))
               , paren_expr
               ]
 
@@ -96,7 +98,6 @@ block :: Perl5Parser [Node]
 block = seQ [ op "{", lines_, op "}" ]
 continue_block = seQ [ symbol_ "continue", block ]
 
-scalar_variable = newNode"$" $ toList $ fmap Tokens $ seQ [ operator "$", word ]
 var_declarator = any_symbol_node [ "my", "our" ]
 semi_colon = newNode"Token::Structure"$ op ";"
 label = fmap Tokens Perl5Parser.Token.p_Label
