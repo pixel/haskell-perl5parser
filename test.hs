@@ -47,12 +47,23 @@ ok_exprs = [ ("1+2", "1+2")
            , ("1 ? 2 : f 3, 4", "1 ? 2 : (f (3, 4))")
            , ("1 ? f 2, 3 : 4", "1 ? (f (2, 3 )): 4")
            , ("1 ? f 2, 3 ? 4 : 5 : 6", "1 ? (f (2, (3 ? 4 : 5 ))): 6") -- perl doesn't parse it correctly, should we also fail?
+           -- identifiers
            , ("::f 1", "::f 1")
            , ("$:: = 1", "$:: = 1")
            , ("$a:: = 1", "$a:: = 1")
            , ("$::a = 1", "$::a = 1")
            , ("$:::: = 1", "$:::: = 1")
            , ("$::::a:::: = 1", "$::::a:::: = 1")
+           -- explicit deref
+           , ("$a->meth", "$a->meth")
+           , ("$a->'meth'", "$a->'meth'")
+           , ("$a->\"meth\"", "$a->\"meth\"")
+           , ("$a->$m", "$a->$m")
+           , ("$a->[0]", "$a->[(0)]")
+           , ("$a->(0)", "$a->((0))")
+           , ("$a->{aa}", "$a->{(aa)}")
+           , ("$a->{'aa'}", "$a->{('aa')}")
+           -- ff {0} and ff [0] are invalid perl, must be disallowed somehow
            ]
 
 test_exprs = concat $ map test ok_exprs

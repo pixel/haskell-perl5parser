@@ -1,5 +1,5 @@
 module Perl5Parser.Token.Quote
-    ( p_Single, p_Double
+    ( p_Single, p_Single_raw, p_Double, p_Double_raw
     , p_Literal, p_Interpolate
     --
     , user_delimited_string, user_delimited_string_p, inside_string
@@ -8,15 +8,21 @@ module Perl5Parser.Token.Quote
 import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 
-p_Single :: Perl5Parser (QuoteT, String)
-p_Single = do char '\''
-              (_, s) <- inside_string '\''
-              return (Single, s)
+p_Single :: Perl5Parser TokenT
+p_Single = fmap (\(cc, s) -> Quote cc s) p_Single_raw
 
-p_Double :: Perl5Parser (QuoteT, String)
-p_Double = do char '"'
-              (_, s) <- inside_string '"'
-              return (Double, s)
+p_Single_raw :: Perl5Parser (QuoteT, String)
+p_Single_raw = do char '\''
+                  (_, s) <- inside_string '\''
+                  return (Single, s)
+
+p_Double :: Perl5Parser TokenT
+p_Double = fmap (\(cc, s) -> Quote cc s) p_Double_raw
+
+p_Double_raw :: Perl5Parser (QuoteT, String)
+p_Double_raw = do char '"'
+                  (_, s) <- inside_string '"'
+                  return (Double, s)
 
 p_Literal :: Perl5Parser (QuoteT, String)
 p_Literal = do (structure, s) <- user_delimited_string "q"

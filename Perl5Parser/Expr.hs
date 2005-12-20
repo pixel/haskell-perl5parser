@@ -182,13 +182,11 @@ expr = newNode"expr"$ fmap reduce expr_
           do op@(fixity, _prio, (_l,s)) <- choice postParsers'
              return$ show4debug"middle found" s
              t <- if fixity == Postfix then return Nothing 
-                  else if s == "->" then get_method_call
+                  else if s == "->" then fmap (Just . toZZ) after_deref
                   else fmap Just term_with_pre <|> 
                       (if s == "," || s == "=>" then return Nothing else pzero)
              let question_opened' = z_question_opened e + (case s of { "?" -> 1; ":" -> -1; _ -> 0 })
              return (add_maybe e (toZZ_ op) t) { z_question_opened = question_opened' }
-
-      get_method_call = fmap Just term_with_pre
 
       reduce :: ZZ -> [Node]
       reduce e = reduce_ e
