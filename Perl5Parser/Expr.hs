@@ -194,7 +194,7 @@ expr = newNode"expr"$ fmap reduce expr_
             maybe_reduce = maybe [] reduce
 
             reduce_ :: ZZ -> [Node]
-            reduce_ (ZZ _ Nothing middle Nothing _ _ _) = middle
+            reduce_ (ZZ (NodeName"") Nothing middle Nothing _ _ _) = middle
             reduce_ z@(ZZ (NodeName "?") _ _ _ _ _ _) = reduce_ (group z)
                 where
                   group z@(ZZ (NodeName "?") _ op1 (Just right) _ _ _) = 
