@@ -116,7 +116,8 @@ expr = newNode"expr"$ fmap reduce expr_
                  fold_many middle e
 
       term_with_pre = 
-                  term_with_pre_op
+                  filetest_call -- do it before term_with_pre_op other "-" is matching unary op
+              <|> term_with_pre_op
               <|> ampersand_call
               <|> fmap toZZ (toList term)
               <|> bareword_call
@@ -127,6 +128,11 @@ expr = newNode"expr"$ fmap reduce expr_
 
       ampersand_call = do f <- func
                           call_paren f <|> to_call_no_para f
+
+      filetest_call = do f <- Perl5Parser.Token.p_Filetest_raw
+                         s <- spaces_comments
+                         let e = Tokens (Word f : s)
+                         call_paren e <|> bareword_call_proto f e
 
       bareword_call = do f <- Perl5Parser.Token.p_Ident_raw
                          s <- spaces_comments

@@ -19,5 +19,5 @@ here_doc_next :: Perl5Parser ([TokenT], TokenT, String)
 here_doc_next = do s <- many1 wordAny  -- ^ and not word_raw because <<1 is allowed
                    return ([], Word s, s)
             <|> do l <- spaces_token
-                   (quote, s) <- Perl5Parser.Token.Quote.p_Single <|> Perl5Parser.Token.Quote.p_Double
+                   (quote, s) <- Perl5Parser.Token.Quote.p_Single_raw <|> Perl5Parser.Token.Quote.p_Double_raw
                    return (l, Quote quote s, s)

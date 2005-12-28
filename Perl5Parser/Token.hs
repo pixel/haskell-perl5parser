@@ -2,11 +2,12 @@ module Perl5Parser.Token
     ( p_Token
     , p_Pod
     , p_Label
-    , p_Ident, p_Ident_raw
+    , p_Ident, p_Ident_raw, p_Filetest_raw
     ) where
 
 import Perl5Parser.Types
 import Perl5Parser.ParserHelper
+import qualified Perl5Parser.Prototype
 import qualified Perl5Parser.Token.Number
 import qualified Perl5Parser.Token.QuoteLike
 import qualified Perl5Parser.Token.Quote
@@ -39,13 +40,19 @@ p_Ident_raw = try $ do s <- seQ [ try_string "::", option "" p_Ident_raw ]
                             <|> seQ [ word_raw, option "" p_Ident_raw ]
                        if elem s infix_cmds then pzero else return s
 
+
+-- | file test functions (eg: -x '/sbin/halt')
+p_Filetest_raw = try $ do char '-'
+                          c <- endWord (oneOf Perl5Parser.Prototype.filetest_functions)
+                          return$ "-" ++ [c]
+
 p_Token :: Perl5Parser [TokenT]
 p_Token = do pcons p spaces_comments
     where p = 
                   fmap to_Quote Perl5Parser.Token.Quote.p_Interpolate
               <|> fmap to_Quote Perl5Parser.Token.Quote.p_Literal
-              <|> fmap to_Quote Perl5Parser.Token.Quote.p_Single
-              <|> fmap to_Quote Perl5Parser.Token.Quote.p_Double
+              <|> Perl5Parser.Token.Quote.p_Single
+              <|> Perl5Parser.Token.Quote.p_Double
 
               <|> fmap (Number NormalNumber) Perl5Parser.Token.Number.p_Number
               <|> fmap (Number VersionNumber) Perl5Parser.Token.Number.p_VersionNumber

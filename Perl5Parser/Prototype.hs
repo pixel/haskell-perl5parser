@@ -1,6 +1,7 @@
 module Perl5Parser.Prototype
     ( parse_prototype
     , builtin_prototypes
+    , filetest_functions
     ) where
 
 import Perl5Parser.ParserHelper
@@ -30,7 +31,12 @@ parse_prototype = parse parser ()
       p4 = oneOfl "$@%&*"
 
 
-builtin_prototypes = Map.unions $ map Map.fromList [ known_builtin_prototypes, unknown_builtin_prototypes ]
+builtin_prototypes = Map.unions $ map Map.fromList [ filetest_prototypes, known_builtin_prototypes, unknown_builtin_prototypes ]
+
+
+filetest_functions = "rwxoRWXOezsfdlpSbctugkTBMAC"
+
+filetest_prototypes = map (\c -> ("-" ++ [c], ";$")) filetest_functions
 
 unknown_builtin_prototypes =
     [ ("chop", ";$")
