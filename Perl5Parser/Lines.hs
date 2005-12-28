@@ -53,7 +53,7 @@ anonymous_sub = newNode"anonymous_sub"$ seQ
                 , block
                 ]
 
-prototype = option [] (toNodes $ toList prototype_)
+prototype = option [] (toNodes $ pcons prototype_ spaces_comments)
     where prototype_ = fmap Prototype $ seQ [ charl '(' , anyTill (charl ')') ]
 
 subattrlist = toNodes $ manY (seQ [ operator ":", word ])
