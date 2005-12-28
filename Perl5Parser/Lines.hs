@@ -65,7 +65,17 @@ if_then = newNode"if_then"$ seQ l
     where l = [ symbol_ "if" <|> symbol_ "unless"
               , paren_expr
               , block
+              , option [] (elsif <|> else_)
               ]
+elsif = seQ [ symbol_ "elsif"
+            , paren_expr
+            , block
+            , option [] (elsif <|> else_)
+            ]
+else_ = seQ [ symbol_ "else"
+            , block
+            ]
+
 loop = newNode"loop"$ seQ l
     where l = [ symbol_ "while" <|> symbol_ "until"
               , paren_option_expr
