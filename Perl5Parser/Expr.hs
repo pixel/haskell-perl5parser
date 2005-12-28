@@ -161,8 +161,7 @@ expr = newNode"expr"$ fmap reduce expr_
                               <|> do t <- term_with_pre
                                      to_call e prio t
 
-                  with_block_para b = do lookAhead (satisfy (/= ','))
-                                         t <- term_with_pre -- ^ map { ... } @foo
+                  with_block_para b = do t <- term_with_pre -- ^ map { ... } @foo
                                          return$ ZZ (NodeName"call") Nothing (e : b) (Just t) prio AssocNone 0
                                   <|> do to_call e prio (toZZ b) -- ^ END { ...}  or  f { a => 1 }, ...
 
