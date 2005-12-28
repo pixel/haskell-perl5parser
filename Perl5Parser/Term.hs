@@ -54,14 +54,15 @@ declvar = newNode"declvar"$ pcons (any_symbol_node [ "my", "our", "local" ]) lex
 
 ----------------------------------------
 after_deref :: Perl5Parser [Node]
-after_deref = squareB_option_expr 
-              <|> curlyB_option_expr
-              <|> toList grouped
+after_deref = fmap concat (many1 simple_subscript)
               <|> pcons method (option [] paren_option_expr)
     where method = scalar
                    <|> fmap Tokens Perl5Parser.Token.p_Ident 
                    <|> fmap Tokens (toList Perl5Parser.Token.Quote.p_Double)
                    <|> fmap Tokens (toList Perl5Parser.Token.Quote.p_Single)
+          simple_subscript = squareB_option_expr 
+                             <|> curlyB_option_expr
+                             <|> toList grouped
 
 ----------------------------------------
 arraylen = var_context "$#"
