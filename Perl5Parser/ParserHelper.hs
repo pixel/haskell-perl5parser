@@ -96,7 +96,7 @@ balancedDelim c = case c of
                     ']' -> Just '['
                     _   -> Nothing
 
-infix_cmds = [ "if", "unless", "while", "until", "for" ]
+infix_cmds = [ "if", "unless", "while", "until", "for", "foreach" ]
 
 
 -- char parser constructors
