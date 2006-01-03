@@ -157,13 +157,13 @@ expr = newNode"expr"$ fmap reduce expr_
                   no_para = to_call_no_para e
 
                   with_para = do b <- block
-                                 with_block_para b
+                                 if max == 1 then to_call e prio (toZZ b) else with_block_para b
                               <|> do t <- term_with_pre
                                      to_call e prio t
 
                   with_block_para b = do t <- term_with_pre -- ^ map { ... } @foo
                                          return$ ZZ (NodeName"call") Nothing (e : b) (Just t) prio AssocNone 0
-                                  <|> do to_call e prio (toZZ b) -- ^ END { ...}  or  f { a => 1 }, ...
+                                  <|> do to_call e prio (toZZ b) -- ^ for functions we don't have the prototype, which can be either "f { ...} expr"  or "f { ... }, expr"
 
       to_call_no_para f =
           let call = ZZ (NodeName"call") Nothing [f] Nothing prio_max AssocNone 0 in
