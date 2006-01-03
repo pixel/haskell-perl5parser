@@ -53,6 +53,7 @@ unknown_builtin_prototypes =
     , ("prototype", "$")
     , ("readpipe", "$")
     , ("scalar", "$")
+    , ("split", "@")
     , ("study", ";$")
     , ("tied", "$")
     , ("undef", ";$")
