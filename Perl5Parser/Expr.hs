@@ -137,7 +137,12 @@ expr = newNode"expr"$ fmap reduce expr_
       bareword_call = do f <- Perl5Parser.Token.p_Ident_raw
                          s <- spaces_comments
                          let e = Tokens (Word f : s)
-                         call_paren e <|> bareword_call_proto f e
+                         class_call e <|> call_paren e <|> bareword_call_proto f e
+
+      -- | simply return this word, it will be handled nicely by Perl5Parser.Term.after_deref
+      class_call :: Node -> Perl5Parser ZZ
+      class_call f = do lookAhead (string "->")
+                        return$ toZZ [f]        
 
       call_paren :: Node -> Perl5Parser ZZ
       call_paren f = do l <- newNode"paren_option_expr"$ paren_option_expr
@@ -146,13 +151,13 @@ expr = newNode"expr"$ fmap reduce expr_
       bareword_call_proto :: String -> Node -> Perl5Parser ZZ
       bareword_call_proto f e = 
           do proto <- get_prototype f
-             case proto of
-               -- | in case a bareword is not known to be a function, we don't allow it to take a /re/ as argument
-               Nothing -> do notFollowedBy (char '/') 
-                             normal_choices proto
-                          <|> no_para
-               _ -> normal_choices proto
+             special_for_slash proto <|> normal_choices proto
           where
+            -- | in case a bareword is not known to be a function, we don't allow it to take a /re/ as argument
+            special_for_slash proto =
+                do if isNothing proto then lookAhead (char '/') else pzero
+                   no_para
+
             no_para = to_call_no_para e
 
             normal_choices proto = choice ((if max > 0 then [with_para] else [])
