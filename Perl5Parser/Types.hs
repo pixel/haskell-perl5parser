@@ -29,6 +29,7 @@ data BalancedOrNot a =
   | Balanced Char a
     deriving Show
 
+-- | [TokenT] is the optional comment
 type LiteralT = ([TokenT], BalancedOrNot Char)
 type SubstituteT = ([TokenT], BalancedOrNot (Char, LiteralT))
 
