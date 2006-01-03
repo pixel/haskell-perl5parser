@@ -6,7 +6,7 @@ module Perl5Parser.Token.Number
 import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 
-import Text.ParserCombinators.Parsec (digit, octDigit, hexDigit)
+import Text.ParserCombinators.Parsec (octDigit, hexDigit)
 
 
 p_Number :: Perl5Parser String

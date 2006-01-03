@@ -1,5 +1,5 @@
 module Perl5Parser.ParserHelper
-    ( many, many1, eof, (<|>), (<?>), option, try, char, string, pzero
+    ( many, many1, eof, (<|>), (<?>), option, try, char, string, digit, pzero
     , anyChar, oneOf, updateState, satisfy, isAlpha, getState, choice, lookAhead, notFollowedBy
     -- ^ above are re-exported
     --
@@ -21,7 +21,7 @@ module Perl5Parser.ParserHelper
 import Data.Char (isAlphaNum, isDigit, isAlpha, isSpace)
 import Text.ParserCombinators.Parsec (oneOf, GenParser, CharParser, (<?>), many, many1,
       satisfy, space, try, notFollowedBy, choice, (<|>), anyChar, eof, lookAhead,
-      option, getState, updateState, runParser, char, string, getPosition, pzero, newline)
+      option, getState, updateState, runParser, char, string, digit, getPosition, pzero, newline)
 import Text.ParserCombinators.Parsec.Pos (sourceColumn)
 
 import System.IO.Unsafe (unsafePerformIO)

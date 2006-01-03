@@ -68,21 +68,34 @@ after_deref = fmap concat (many1 simple_subscript)
 -- E  =  [@%$&*] space* R <|> $# R
 -- R  =  $* (ident <|> { expr })
 
-arraylen = var_context "$#" (return [])
-scalar   = var_context "$" spaces_comments
-star     = var_context "*" spaces_comments
-hash     = var_context "%" spaces_comments
-array    = var_context "@" spaces_comments
-func     = var_context_ "&" (pcons (try one_ampersand_only) (toNodes spaces_comments))
+arraylen = var_context "$#" (return []) []
+scalar   = var_context "$" spaces_comments magic_scalars
+star     = var_context "*" spaces_comments []
+hash     = var_context "%" spaces_comments magic_hashes
+array    = var_context "@" spaces_comments magic_arrays
+func     = var_context_ "&" (pcons (try one_ampersand_only) (toNodes spaces_comments)) []
     -- | ugly special case to handle "eval {} && ...", so here we accept only one ampersand
     where one_ampersand_only = try$ do s <- operator_node "&"
                                        notFollowedBy (char '&')
                                        return s
 
-var_context :: String -> Perl5Parser [TokenT] -> Perl5Parser Node
+var_context :: String -> Perl5Parser [TokenT] -> [String] -> Perl5Parser Node
 var_context s between = var_context_ s (pcons (try$ operator_node s) (toNodes between))
+    
+var_context_ :: String -> Perl5Parser [Node] -> [String] -> Perl5Parser Node
+var_context_ s p l_magics = newNode s $ seQ [ p, var_context_after <|> magics ] -- ^ do magics after var_context_after to handle $:: vs $:
+    where
+      magics = do magic <- choice (map try_string l_magics)
+                  l <- spaces_comments
+                  return [Tokens $ Word magic : l]
 
-var_context_ :: String -> Perl5Parser [Node] -> Perl5Parser Node
-var_context_ s p = newNode s $ seQ [ p, after ]
-    where after = seQ [ many (operator_node "$"), after_end ]
-          after_end = toNodes Perl5Parser.Token.p_Ident <|> curlyB_option_expr
+
+var_context_after :: Perl5Parser [Node]
+var_context_after = seQ [ many (operator_node "$"), after_end ]
+    where after_end = curlyB_option_expr 
+                      <|> toNodes Perl5Parser.Token.p_Ident 
+                      <|> toNodes (pcons (fmap Word $ many1 digit) spaces_comments)
+
+magic_scalars = [ "&", "`", "'", "+", "*", ".", "/", "|", "\\", "\"", ";", "%", "=", "-", ")", "#", "~", "^", ":", "?", "!", "@", "$", "<", ">", "(", "0", "[", "]", "}", ",", "#+", "#-", "^L", "^A", "^E", "^C", "^D", "^F", "^H", "^I", "^M", "^N", "^O", "^P", "^R", "^S", "^T", "^V", "^W", "^X" ]
+magic_arrays = [ "+", "-", "*" ]
+magic_hashes = [ "!" ]
