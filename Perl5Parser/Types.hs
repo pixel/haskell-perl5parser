@@ -50,7 +50,7 @@ data QuoteLikeT =
 type RegexpOptionT = String
 
 data RegexpT =
-    Match LiteralT String RegexpOptionT
+    Match (Maybe LiteralT) String RegexpOptionT
   | Substitute SubstituteT String String RegexpOptionT
   | Transliterate (String, SubstituteT) String String RegexpOptionT
     deriving Show

@@ -63,6 +63,7 @@ ok_exprs = [ ("1+2", "1+2")
            , ("$a->(0)", "$a->((0))")
            , ("$a->{aa}", "$a->{(aa)}")
            , ("$a->{'aa'}", "$a->{('aa')}")
+           -- ff {0} and ff [0] are invalid perl, must be disallowed somehow
            , ("$ a", "$ a")
            , ("$ $$$a", "$ $$$a")
            , ("@$a", "@$a")
@@ -73,7 +74,9 @@ ok_exprs = [ ("1+2", "1+2")
            , ("map {1}&a", "map {(1)}((&a))")
            , ("eval {1}&a", "(eval {(1)})&(a)")
            , ("eval {1}&&a", "(eval {(1)})&&(a)")
-           -- ff {0} and ff [0] are invalid perl, must be disallowed somehow
+           , ("fork/2", "(fork)/2")
+           , ("scalar/2/", "scalar/2/")
+           , ("foo/2", "(foo)/2")
            ]
 
 test_exprs = concat $ map test ok_exprs

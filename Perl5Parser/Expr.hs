@@ -146,15 +146,20 @@ expr = newNode"expr"$ fmap reduce expr_
       bareword_call_proto :: String -> Node -> Perl5Parser ZZ
       bareword_call_proto f e = 
           do proto <- get_prototype f
-             choice (choices proto)
+             case proto of
+               -- | in case a bareword is not known to be a function, we don't allow it to take a /re/ as argument
+               Nothing -> do notFollowedBy (char '/') 
+                             normal_choices proto
+                          <|> no_para
+               _ -> normal_choices proto
           where
-            choices proto = (if max > 0 then [with_para] else [])
-                            ++ (if min == 0 then [no_para] else [])
+            no_para = to_call_no_para e
+
+            normal_choices proto = choice ((if max > 0 then [with_para] else [])
+                                           ++ (if min == 0 then [no_para] else []))
                 where
                   (min, max) = fromMaybe (0, 99) (proto >>= parse_prototype)
                   prio = if max == 1 then prio_named_unary else prio_normal_call
-
-                  no_para = to_call_no_para e
 
                   with_para = do b <- block
                                  if max == 1 then to_call e prio (toZZ b) else with_block_para b

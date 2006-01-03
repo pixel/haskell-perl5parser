@@ -62,7 +62,8 @@ to_s_QuoteLike Readline s = "<" ++ s ++ ">"
 to_s_QuoteLike (Words t) s = "qw" ++ to_s_structure t s
 to_s_QuoteLike (Qr t) s = "qr" ++ to_s_structure t s
 
-to_s_Regexp (Match t s opt) = "m" ++ to_s_structure t s ++ opt
+to_s_Regexp (Match Nothing s opt) = "/" ++ s ++ "/" ++ opt
+to_s_Regexp (Match (Just t) s opt) = "m" ++ to_s_structure t s ++ opt
 to_s_Regexp (Substitute t s1 s2 opt) = "s" ++ to_s_subst t s1 s2 ++ opt
 to_s_Regexp (Transliterate (name, t) s1 s2 opt) = name ++ to_s_subst t s1 s2 ++ opt
 

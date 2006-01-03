@@ -11,9 +11,17 @@ import Perl5Parser.Token.Quote (user_delimited_string, user_delimited_string_p, 
 
 
 p_Match :: Perl5Parser RegexpT
-p_Match = do (structure, s) <- user_delimited_string "m"
-             options <- regexp_options
-             return$ Match structure s options
+p_Match = p_Match_raw <|> p_Match_m
+
+p_Match_raw = do char '/'
+                 s <- many (satisfy (/= '/'))
+                 char '/'
+                 options <- regexp_options
+                 return$ Match Nothing s options
+
+p_Match_m = do (structure, s) <- user_delimited_string "m"
+               options <- regexp_options
+               return$ Match (Just structure) s options
 
 p_Substitute :: Perl5Parser RegexpT
 p_Substitute = do (structure, s1, s2) <- user_delimited_ter "s"
