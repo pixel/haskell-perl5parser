@@ -12,7 +12,6 @@ import {-# SOURCE #-} Perl5Parser.Lines
 
 term :: Perl5Parser Node
 term = anonymous
-       <|> declvar
        <|> grouped
 
        <|> arraylen -- before scalar
@@ -50,10 +49,6 @@ array_maybe_slice = do a <- array
 anonymous =     newNode"[]" squareB_option_expr
             <|> newNode"{}" curlyB_option_expr
             <|> anonymous_sub
-
-declvar = newNode"declvar"$ pcons (any_symbol_node [ "my", "our", "local" ]) lexpr
-
-
 
 simple_subscript = squareB_option_expr 
                    <|> curlyB_option_expr

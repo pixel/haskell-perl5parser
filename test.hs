@@ -95,7 +95,7 @@ ok_exprs = [ ("1+2", "1+2")
            -- complex ?: calls
            , ("($v ? N() . '; ' . N() . ': ' . $w : N())", "($v ? ((((N() ). '; ' ). ((N() ). ': ' )). $w ): (N()))")
            , ("$a = 0 || !1 ? 2 : 3", "$a = ((0 || (!1 ))? 2 : 3)")
-           , ("my @l = ref($needs) ? @$needs : $needs;", "my @l = ((ref($needs) )? @$needs : $needs);")
+           , ("my @l = ref($needs) ? @$needs : $needs;", "(my @l )= ((ref($needs) )? @$needs : $needs);")
            ]
 
 test_exprs = concat $ map test ok_exprs
