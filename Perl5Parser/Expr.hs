@@ -203,16 +203,25 @@ expr = newNode"expr"$ expr_ >>= reduce
                                      return z { z_left = left2 }
                  
       middle e = 
-          let postParsers' = if z_question_opened e > 0 then postParsers ++ [ operator_to_parser (infixRight, 18, ":") ] else postParsers in
+          let postParsers' = if z_question_opened e > 0 || z_priority e == 19 then postParsers ++ [ operator_to_parser (infixRight, 18, ":") ] else postParsers in
           do op@(fixity, _prio, (_l,s)) <- choice postParsers'
              return$ show4debug"middle found" s
              t <- if fixity == Postfix then return Nothing 
                   else if s == "->" then fmap (Just . toZZ) after_deref
                   else fmap Just term_with_pre <|> 
                       (if s == "," || s == "=>" then return Nothing else pzero)
-             let e' = add_maybe e (toZZ_ op) t
-             let question_opened = z_question_opened e' + (case s of { "?" -> 1; ":" -> -1; _ -> 0 })
-             return e' { z_question_opened = question_opened }
+
+             e2 <- if s == ":" && z_question_opened e == 0 then reduce_assign_for_ternary e else return e
+             let e3 = add_maybe e2 (toZZ_ op) t
+             let question_opened = z_question_opened e3 + (case s of { "?" -> 1; ":" -> -1; _ -> 0 })
+             return e3 { z_question_opened = question_opened }
+
+      reduce_assign_for_ternary assign =
+          case z_left assign of
+            Just question -> 
+                do assign' <- reduce (assign { z_left = z_right question })
+                   return $ question { z_right = Just (toZZ assign') }
+            Nothing -> fail "internal error reduce_assign_for_ternary"
 
       reduce :: ZZ -> Perl5Parser [Node]
       reduce e = reduce_ e
