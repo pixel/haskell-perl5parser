@@ -1,7 +1,7 @@
 module Perl5Parser.Types
     ( State(..)
     , NodeName(..), CommentO, BalancedOrNot(..), LiteralT, SubstituteT
-    , QuoteT(..), QuoteLikeT(..), RegexpOptionT, RegexpT(..), NumberT(..), TokenT(..), Node(..)
+    , QuoteT(..), QuoteLikeT(..), RegexpOptionT, RegexpT(..), NumberT(..), SeparatorT(..), TokenT(..), Node(..)
     , Perl5Parser
     ) where
 
@@ -61,6 +61,11 @@ data NumberT =
   | VersionNumber
     deriving Show
 
+data SeparatorT = 
+    Separator_Data
+  | Separator_End
+    deriving Show
+
 data TokenT =
     Quote QuoteT String
   | QuoteLike QuoteLikeT String
@@ -69,6 +74,7 @@ data TokenT =
   | Word String
   | Whitespace String
   | Comment String
+  | Separator SeparatorT [String] String
   | HereDoc [TokenT] TokenT
   | HereDocValue String
   | PictureFormat String

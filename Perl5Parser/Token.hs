@@ -70,5 +70,15 @@ p_Token = do pcons p spaces_comments
               <|> fmap to_QuoteLike Perl5Parser.Token.QuoteLike.p_Readline
               <|> fmap to_QuoteLike Perl5Parser.Token.QuoteLike.p_Glob
 
+              <|> p_EndData
+
           to_Quote (cc, s) = Quote cc s
           to_QuoteLike (cc, s) = QuoteLike cc s
+
+
+p_EndData :: Perl5Parser TokenT
+p_EndData = do sep <- choice (map (endWord . string) [ "__END__", "__DATA__" ])
+               comment <- manyl (satisfy (/= '\n'))
+               l <- option [] (toList $ string "\n")
+               s <- many anyChar
+               return$ Separator (if sep == "__END__" then Separator_End else Separator_Data) (comment ++ l) s

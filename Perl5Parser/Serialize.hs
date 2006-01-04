@@ -36,6 +36,7 @@ instance Serialize TokenT where
     verbatim (Quote t s) = to_s_Quote t s
     verbatim (QuoteLike t s) = to_s_QuoteLike t s
     verbatim (Regexp t) = to_s_Regexp t
+    verbatim (Separator sep l s) = to_s_Separator sep ++ concat l ++ s
     verbatim (HereDoc co name) = verbatim co ++ verbatim name
     verbatim (Label label co) = label ++ concat co
     verbatim (Number _ s) = s
@@ -68,6 +69,8 @@ to_s_Regexp (Qr t s opt) = "qr" ++ to_s_structure t s ++ opt
 to_s_Regexp (Substitute t s1 s2 opt) = "s" ++ to_s_subst t s1 s2 ++ opt
 to_s_Regexp (Transliterate (name, t) s1 s2 opt) = name ++ to_s_subst t s1 s2 ++ opt
 
+to_s_Separator Separator_Data = "__DATA__"
+to_s_Separator Separator_End = "__END__"
 
 to_s_structure :: LiteralT -> String -> String
 to_s_structure (co, cc) s = verbatim co ++ [c1] ++ s ++ [c2]

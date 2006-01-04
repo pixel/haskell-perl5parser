@@ -155,7 +155,7 @@ expr = newNode"expr"$ expr_ >>= reduce
 
       call_paren :: Node -> Perl5Parser ZZ
       call_paren f = do l <- newNode"paren_option_expr"$ paren_option_expr
-                        to_call f prio_max (toZZ [l])
+                        to_call [f] prio_max (toZZ [l])
 
       bareword_call_proto :: String -> Node -> Perl5Parser ZZ
       bareword_call_proto f e = 
@@ -176,20 +176,20 @@ expr = newNode"expr"$ expr_ >>= reduce
                   prio = if max == 1 then prio_named_unary else prio_normal_call
 
                   with_para = do b <- block
-                                 if max == 1 then to_call e prio (toZZ b) else with_block_para b
+                                 if max == 1 then to_call [e] prio (toZZ b) else with_block_para b
                               <|> do t <- term_with_pre
-                                     to_call e prio t
+                                     to_call [e] prio t
 
                   with_block_para b = do t <- term_with_pre -- ^ map { ... } @foo
-                                         return$ ZZ (NodeName"call") Nothing (e : b) (Just t) prio AssocNone 0
-                                  <|> do to_call e prio (toZZ b) -- ^ for functions we don't have the prototype, which can be either "f { ...} expr"  or "f { ... }, expr"
+                                         to_call (e : b) prio t
+                                  <|> do to_call [e] prio (toZZ b) -- ^ for functions we don't have the prototype, which can be either "f { ...} expr"  or "f { ... }, expr"
 
       to_call_no_para f =
           let call = ZZ (NodeName"call") Nothing [f] Nothing prio_max AssocNone 0 in
           return call
 
       to_call f prio child = 
-          let call = ZZ (NodeName"call") Nothing [f] Nothing prio AssocNone 0 in
+          let call = ZZ (NodeName"call") Nothing f Nothing prio AssocNone 0 in
           get_middle (add_pre call child)
 
       toZZ l = ZZ (NodeName"") Nothing l Nothing prio_max AssocNone 0
