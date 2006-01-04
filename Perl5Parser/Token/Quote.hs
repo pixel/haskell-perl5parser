@@ -29,7 +29,7 @@ p_Literal = do (structure, s) <- user_delimited_string "q"
                return (Literal structure, s)
 
 p_Interpolate :: Perl5Parser (QuoteT, String)
-p_Interpolate = do (structure, s) <- user_delimited_string "q"
+p_Interpolate = do (structure, s) <- user_delimited_string "qq"
                    return (Interpolate structure, s)
 
 user_delimited_string_p :: Perl5Parser Char -> Perl5Parser (LiteralT, String)
