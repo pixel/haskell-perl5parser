@@ -59,6 +59,7 @@ to_s_Quote (Interpolate structure) s = "qq" ++ to_s_structure structure s
 
 to_s_QuoteLike Glob s = "<" ++ s ++ ">"
 to_s_QuoteLike Readline s = "<" ++ s ++ ">"
+to_s_QuoteLike Backstick s = "`" ++ s ++ "`"
 to_s_QuoteLike (Words t) s = "qw" ++ to_s_structure t s
 to_s_QuoteLike (Qr t) s = "qr" ++ to_s_structure t s
 

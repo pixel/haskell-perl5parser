@@ -60,6 +60,7 @@ p_Token = do pcons p spaces_comments
               <|> fmap Regexp Perl5Parser.Token.Regexp.p_Match
               <|> fmap Regexp Perl5Parser.Token.Regexp.p_Substitute
               <|> fmap Regexp Perl5Parser.Token.Regexp.p_Transliterate
+              <|> fmap to_QuoteLike Perl5Parser.Token.QuoteLike.p_Backstick
               <|> fmap to_QuoteLike Perl5Parser.Token.QuoteLike.p_Words
 
                   -- !! HereDoc before Readline and Glob !!

@@ -3,6 +3,7 @@ module Perl5Parser.Token.QuoteLike
     , p_Glob
     , p_Words
     , p_Qr
+    , p_Backstick
     ) where
 
 import Perl5Parser.Types
@@ -32,3 +33,8 @@ p_Words = do (structure, s) <- user_delimited_string "qw"
 p_Qr :: Perl5Parser (QuoteLikeT, String)
 p_Qr = do (structure, s) <- user_delimited_string "qr"
           return (Qr structure, s)
+
+p_Backstick :: Perl5Parser (QuoteLikeT, String)
+p_Backstick = do char '`'
+                 (_, s) <- inside_string '`'
+                 return (Backstick, s)

@@ -43,6 +43,7 @@ data QuoteT =
 data QuoteLikeT =
     Glob
   | Readline
+  | Backstick
   | Words LiteralT
   | Qr LiteralT
     deriving Show
