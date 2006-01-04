@@ -96,6 +96,7 @@ ok_exprs = [ ("1+2", "1+2")
            , ("($v ? N() . '; ' . N() . ': ' . $w : N())", "($v ? ((((N() ). '; ' ). ((N() ). ': ' )). $w ): (N()))")
            , ("$a = 0 || !1 ? 2 : 3", "$a = ((0 || (!1 ))? 2 : 3)")
            , ("my @l = ref($needs) ? @$needs : $needs;", "(my @l )= ((ref($needs) )? @$needs : $needs);")
+           , ("0 ? 1 : f() ? 2 : 3", "0 ? 1 : ((f() )? 2 : 3)")
            ]
 
 test_exprs = concat $ map test ok_exprs

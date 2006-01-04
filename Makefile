@@ -3,7 +3,7 @@ Perl5Parser_HS = Perl5Parser/Common.hs Perl5Parser/Types.hs Perl5Parser/Serializ
 Perl5Parser_O = $(Perl5Parser_HS:%.hs=%.o)
 
 all: TAGS test
-	./test /tmp/t.pl && diff -u /tmp/t.pl /tmp/t.pl.new
+	./test
 
 test: $(Perl5Parser_O) test.o
 	ghc -W $^ -o $@ -package parsec

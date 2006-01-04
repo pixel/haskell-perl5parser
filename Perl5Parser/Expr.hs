@@ -263,7 +263,7 @@ expr = newNode"expr"$ expr_ >>= reduce
           else if z_priority left < z_priority op || z_priority left == z_priority op && z_associativity op == AssocLeft then
               add_pre (op { z_left = Just left }) right
           else if z_priority right < z_priority op || z_priority right == z_priority op && z_associativity op == AssocRight then
-              add_post left (op { z_right = Just right })
+              add_post left (op { z_right = Just right, z_question_opened = z_question_opened right })
           else
               -- | here we know for sure that op is no better than left and right
               -- we must find out wether we prefer left or right
@@ -284,7 +284,8 @@ expr = newNode"expr"$ expr_ >>= reduce
       add_post left op = -- ^ here we know that (z_left op) is Nothing
         seq (show4debug"add_post"(left,op)) $
           if z_priority op < z_priority left || z_priority op == z_priority left && z_associativity op == AssocRight then
-              left { z_right = Just (add_post (fromJust$ z_right left) op) }
+              left { z_right = Just (add_post (fromJust$ z_right left) op)
+                   , z_question_opened = question_opened left op }
           else 
               op { z_left = Just left }
 
