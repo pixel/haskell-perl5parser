@@ -71,9 +71,9 @@ anyTill p = scan
              do{ x <- anyChar; xs <- scan; return (x:xs) }
 
 
-parse :: CharParser st a -> st -> String -> a
-parse p init_state input = 
-    case runParser p init_state "" input of
+parse :: CharParser st a -> st -> String -> String -> a
+parse p init_state file_name input = 
+    case runParser p init_state file_name input of
       Left err -> error$ "parse error at " ++ show err
       Right x  -> x
 

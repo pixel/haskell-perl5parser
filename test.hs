@@ -24,7 +24,7 @@ test_tokens =
     where
          parse_and_verif s = must_be_same s s'
              where
-               s' = verbatim $ parse parser' initial_state s
+               s' = verbatim $ parse parser' initial_state "" s
                parser' = manY $ Perl5Parser.Token.p_Token
 --------------------------------------------------------------------------------
 ok_exprs = [ ("1+2", "1+2")
@@ -94,7 +94,7 @@ ok_exprs = [ ("1+2", "1+2")
 
 test_exprs = concat $ map test ok_exprs
     where test (input, wanted) =
-              let ast = parse prog initial_state input in
+              let ast = parse prog initial_state "" input in
               let s' = verbatim ast in
               let s_prio = with_parentheses ast in
               must_be_same input s' ++ must_be_same wanted s_prio
@@ -102,7 +102,7 @@ test_exprs = concat $ map test ok_exprs
 test :: String -> IO ()
 test test_file =
     do s <- readFile test_file
-       let ast = parse prog initial_state s
+       let ast = parse prog initial_state test_file s
        writeFile (test_file ++ ".new") (verbatim ast)
        putStrLn (with_parentheses ast) >> print ast
 

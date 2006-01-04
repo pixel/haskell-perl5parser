@@ -11,7 +11,7 @@ import qualified Data.Map as Map
 
 
 parse_prototype :: String -> Maybe (Int, Int)
-parse_prototype = parse parser ()
+parse_prototype = parse parser () ""
     where
       parser = do left <- parse_simple                     
                   right <- option [] (do { char ';'; parse_simple })
