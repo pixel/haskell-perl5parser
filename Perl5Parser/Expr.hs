@@ -147,7 +147,7 @@ expr = newNode"expr"$ expr_ >>= reduce
 
       -- | simply return this word (useful for class->new and (xxx => ...)
       keep_bareword :: Node -> Perl5Parser ZZ
-      keep_bareword f = do lookAhead (string "->" <|> string "=>")
+      keep_bareword f = do lookAhead (try_string "->" <|> try_string "=>")
                            return$ toZZ [f]        
 
       call_paren :: Node -> Perl5Parser ZZ

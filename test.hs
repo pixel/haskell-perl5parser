@@ -108,5 +108,5 @@ test test_file =
 
 
 main = 
-    do fmap head getArgs >>= test
+    do getArgs >>= mapM_ test
        seq (error_if test_tokens) $ seq (error_if test_exprs) $ return ()
