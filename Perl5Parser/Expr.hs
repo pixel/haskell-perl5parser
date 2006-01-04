@@ -151,17 +151,23 @@ expr = newNode"expr"$ expr_ >>= reduce
       bareword_call = do (f, e, dont_keep_bareword) <- get_bareword
                          if not dont_keep_bareword 
                            then return (toZZ [e]) -- ^ simply return this word (useful for class->new and (xxx => ...)
-                           else call_paren e <|> bareword_call_proto f e
+                           else call_paren e <|> call_print f e <|> bareword_call_proto f e
 
       call_paren :: Node -> Perl5Parser ZZ
       call_paren f = do l <- newNode"paren_option_expr"$ paren_option_expr
                         to_call [f] prio_max (toZZ [l])
+
+      call_print :: String -> Node -> Perl5Parser ZZ
+      call_print f _e = if f == "print" then call_print_ else pzero
+          where
+            call_print_ = error "TODO"
 
       bareword_call_proto :: String -> Node -> Perl5Parser ZZ
       bareword_call_proto f e = 
           do proto <- get_prototype f
              special_for_slash proto <|> normal_choices proto
           where
+
             -- | in case a bareword is not known to be a function, we don't allow it to take a /re/ as argument
             special_for_slash proto =
                 do if isNothing proto then lookAhead (char '/') else pzero
