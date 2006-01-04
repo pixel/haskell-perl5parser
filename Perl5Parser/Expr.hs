@@ -101,8 +101,12 @@ preParsers :: [ Perl5Parser (OpType, Integer, (Node, String)) ]
 paren_expr = seQ [ op "(", lexpr, op ")" ]
 paren_option_expr = seQ [ op "(", option_expr, op ")" ]
 
-curlyB_option_expr = seQ [ op "{", option_expr, op "}" ]
 squareB_option_expr = seQ [ op "[", option_expr, op "]" ]
+
+-- | we need to handle ->{aa} especially so that aa is not understood as being a function
+curlyB_option_expr = do open <- op "{"
+                        l <- try (pcons word_node (op "}")) <|> seQ [ option_expr, op "}" ]
+                        return (open ++ l)
 
 option_expr :: Perl5Parser [Node]
 option_expr = option [] lexpr

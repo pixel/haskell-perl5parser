@@ -65,7 +65,7 @@ ok_exprs = [ ("1+2", "1+2")
            , ("a ->meth(0)", "a ->meth((0))")
            , ("$a->[0]", "$a->[(0)]")
            , ("$a->(0)", "$a->((0))")
-           , ("$a->{aa}", "$a->{(aa)}")
+           , ("$a->{aa}", "$a->{aa}")
            , ("$a->{'aa'}", "$a->{('aa')}")
            -- ff {0} and ff [0] are invalid perl, must be disallowed somehow
            , ("$ a", "$ a")
