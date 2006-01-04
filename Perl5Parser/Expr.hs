@@ -61,7 +61,7 @@ operators =
  ]
 -- "-A", "-B", "-C", "-M", "-O", "-R", "-S", "-T", "-W", "-X", "-b", "-c", "-d", "-e", "-f", "-g", "-k", "-l", "-o", "-p", "-r", "-s", "-t", "-u", "-w", "-x", "-z"
 
-fmap_maybe f Nothing = return Nothing
+fmap_maybe _ Nothing = return Nothing
 fmap_maybe f (Just e) = fmap Just (f e)
 
 op = toList . operator_node
@@ -203,8 +203,9 @@ expr = newNode"expr"$ expr_ >>= reduce
                   else if s == "->" then fmap (Just . toZZ) after_deref
                   else fmap Just term_with_pre <|> 
                       (if s == "," || s == "=>" then return Nothing else pzero)
-             let question_opened' = z_question_opened e + (case s of { "?" -> 1; ":" -> -1; _ -> 0 })
-             return (add_maybe e (toZZ_ op) t) { z_question_opened = question_opened' }
+             let e' = add_maybe e (toZZ_ op) t
+             let question_opened = z_question_opened e' + (case s of { "?" -> 1; ":" -> -1; _ -> 0 })
+             return e' { z_question_opened = question_opened }
 
       reduce :: ZZ -> Perl5Parser [Node]
       reduce e = reduce_ e
@@ -271,7 +272,7 @@ expr = newNode"expr"$ expr_ >>= reduce
                 Nothing -> op { z_right = Just right } -- eg: op = "1 +" and right is "not 2"
                 Just right' -> right { z_left = Just (add_pre op right') }
           else 
-              op { z_right = Just right }
+              op { z_right = Just right, z_question_opened = question_opened op right }
 
       add_post left op = -- ^ here we know that (z_left op) is Nothing
         seq (show4debug"add_post"(left,op)) $
@@ -279,3 +280,5 @@ expr = newNode"expr"$ expr_ >>= reduce
               left { z_right = Just (add_post (fromJust$ z_right left) op) }
           else 
               op { z_left = Just left }
+
+question_opened e1 e2 = z_question_opened e1 + z_question_opened e2
