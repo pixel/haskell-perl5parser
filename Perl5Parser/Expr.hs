@@ -61,6 +61,8 @@ operators =
  ]
 -- "-A", "-B", "-C", "-M", "-O", "-R", "-S", "-T", "-W", "-X", "-b", "-c", "-d", "-e", "-f", "-g", "-k", "-l", "-o", "-p", "-r", "-s", "-t", "-u", "-w", "-x", "-z"
 
+fmap_maybe f Nothing = return Nothing
+fmap_maybe f (Just e) = fmap Just (f e)
 
 op = toList . operator_node
 operator' s = if isWordAny (last s) then symbol_node s else try $ operator_node s
@@ -109,7 +111,7 @@ lexpr :: Perl5Parser [Node]
 lexpr = toList expr
 
 expr :: Perl5Parser Node
-expr = newNode"expr"$ fmap reduce expr_
+expr = newNode"expr"$ expr_ >>= reduce
     where
       expr_ :: Perl5Parser ZZ
       expr_ = do e <- term_with_pre
@@ -187,10 +189,11 @@ expr = newNode"expr"$ fmap reduce expr_
       toZZ_ (fixity, prio, (l,s)) = ZZ (NodeName s) Nothing [l] Nothing prio (fixity_to_associativity fixity) 0
 
       get_middle z = do z' <- middle z
-                        seq (show4debug"get_middle" (z, z')) $ if z_priority z' == z_priority z then get_middle z' else return (reduce_inside z')
-                     <|> return (reduce_local z)
-          where reduce_local z = toZZ (reduce z)
-                reduce_inside z = z { z_left = fmap reduce_local (z_left z) }
+                        seq (show4debug"get_middle" (z, z')) $ if z_priority z' == z_priority z then get_middle z' else reduce_inside z'
+                     <|> reduce_local z
+          where reduce_local z = fmap toZZ (reduce z)
+                reduce_inside z = do left2 <- fmap_maybe reduce_local (z_left z)
+                                     return z { z_left = left2 }
                  
       middle e = 
           let postParsers' = if z_question_opened e > 0 then postParsers ++ [ operator_to_parser (infixRight, 18, ":") ] else postParsers in
@@ -203,33 +206,43 @@ expr = newNode"expr"$ fmap reduce expr_
              let question_opened' = z_question_opened e + (case s of { "?" -> 1; ":" -> -1; _ -> 0 })
              return (add_maybe e (toZZ_ op) t) { z_question_opened = question_opened' }
 
-      reduce :: ZZ -> [Node]
+      reduce :: ZZ -> Perl5Parser [Node]
       reduce e = reduce_ e
           where
-            maybe_reduce = maybe [] reduce
+            maybe_reduce = maybe (return []) reduce
 
-            reduce_ :: ZZ -> [Node]
-            reduce_ (ZZ (NodeName"") Nothing middle Nothing _ _ _) = middle
-            reduce_ z@(ZZ (NodeName "?") _ _ _ _ _ _) = reduce_ (group z)
+            reduce_ :: ZZ -> Perl5Parser [Node]
+            reduce_ (ZZ (NodeName"") Nothing middle Nothing _ _ _) = return middle
+            reduce_ z@(ZZ (NodeName "?") _ _ _ _ _ _) = group z >>= reduce_ 
                 where
                   group z@(ZZ (NodeName "?") _ op1 (Just right) _ _ _) = 
-                      case group right of 
-                        ZZ (NodeName ":") middle_para op2 (Just ri@(ZZ (NodeName ":") _ _ _ _ _ _)) _ _ _ ->
-                            ri { z_left = Just$ z { z_op = NodeName "?:"
-                                                   , z_middle = op1 ++ maybe_reduce middle_para ++ op2
-                                                   , z_right = fmap group (z_left ri)
-                                                   } }
-                        ZZ (NodeName ":") middle_para op2 right _ _ _ ->
-                            z { z_op = NodeName "?:"
-                              , z_middle = op1 ++ maybe_reduce middle_para ++ op2
-                              , z_right = fmap group right
-                              }
-                        _ -> error "missing \":\""
-                  group z = 
-                      z { z_left = fmap group (z_left z)
-                        , z_right = fmap group (z_right z)
-                        }
-            reduce_ (ZZ op left middle right _ _ _) = [ Call(op, maybe_reduce left ++ middle ++ maybe_reduce right) ]
+                      do right2 <- group right
+                         case right2 of
+                           ZZ (NodeName ":") middle_para op2 (Just ri@(ZZ (NodeName ":") _ _ _ _ _ _)) _ _ _ ->
+                            do right2 <- fmap_maybe group (z_left ri)
+                               middle <- maybe_reduce middle_para
+                               return$ ri { z_left = Just$ z { z_op = NodeName "?:"
+                                                             , z_middle = op1 ++ middle ++ op2
+                                                             , z_right = right2
+                                                             } }
+                           ZZ (NodeName ":") middle_para op2 right _ _ _ ->
+                               do right2 <- fmap_maybe group right
+                                  middle <- maybe_reduce middle_para
+                                  return$ z { 
+                                       z_op = NodeName "?:"
+                                      , z_middle = op1 ++ middle ++ op2
+                                      , z_right = right2
+                                      }
+                           _ -> fail "missing \":\""
+                  group z =
+                      do left <- fmap_maybe group (z_left z)
+                         right <- fmap_maybe group (z_right z)
+                         return z { z_left = left , z_right = right }
+
+            reduce_ (ZZ op left middle right _ _ _) = 
+                do left2 <- maybe_reduce left
+                   right2 <- maybe_reduce right
+                   return [ Call(op, left2 ++ middle ++ right2) ]
 
       add_maybe :: ZZ -> ZZ -> Maybe ZZ -> ZZ
       add_maybe left op Nothing = add_post left op
