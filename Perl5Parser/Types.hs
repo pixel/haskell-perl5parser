@@ -45,13 +45,13 @@ data QuoteLikeT =
   | Readline
   | Backstick
   | Words LiteralT
-  | Qr LiteralT
     deriving Show
 
 type RegexpOptionT = String
 
 data RegexpT =
     Match (Maybe LiteralT) String RegexpOptionT
+  | Qr LiteralT String RegexpOptionT
   | Substitute SubstituteT String String RegexpOptionT
   | Transliterate (String, SubstituteT) String String RegexpOptionT
     deriving Show

@@ -2,7 +2,6 @@ module Perl5Parser.Token.QuoteLike
     ( p_Readline
     , p_Glob
     , p_Words
-    , p_Qr
     , p_Backstick
     ) where
 
@@ -29,10 +28,6 @@ p_Glob = do char '<'
 p_Words :: Perl5Parser (QuoteLikeT, String)
 p_Words = do (structure, s) <- user_delimited_string "qw"
              return (Words structure, s)
-
-p_Qr :: Perl5Parser (QuoteLikeT, String)
-p_Qr = do (structure, s) <- user_delimited_string "qr"
-          return (Qr structure, s)
 
 p_Backstick :: Perl5Parser (QuoteLikeT, String)
 p_Backstick = do char '`'

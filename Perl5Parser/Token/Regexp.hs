@@ -1,5 +1,6 @@
 module Perl5Parser.Token.Regexp
     ( p_Match
+    , p_Qr
     , p_Substitute
     , p_Transliterate
     ) where
@@ -22,6 +23,11 @@ p_Match_raw = do char '/'
 p_Match_m = do (structure, s) <- user_delimited_string "m"
                options <- regexp_options
                return$ Match (Just structure) s options
+
+p_Qr :: Perl5Parser RegexpT
+p_Qr = do (structure, s) <- user_delimited_string "qr"
+          options <- regexp_options
+          return$ Qr structure s options
 
 p_Substitute :: Perl5Parser RegexpT
 p_Substitute = do (structure, s1, s2) <- user_delimited_ter "s"
