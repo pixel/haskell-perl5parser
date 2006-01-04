@@ -115,7 +115,7 @@ lexpr :: Perl5Parser [Node]
 lexpr = toList expr
 
 bareword = try$ do s <- Perl5Parser.Token.p_Ident_raw
-                   if elem s infix_cmds then pzero else return s
+                   if elem s keywords then pzero else return s
 
 expr :: Perl5Parser Node
 expr = newNode"expr"$ expr_ >>= reduce
