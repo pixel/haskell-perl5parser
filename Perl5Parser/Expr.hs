@@ -143,12 +143,12 @@ expr = newNode"expr"$ expr_ >>= reduce
       bareword_call = do f <- Perl5Parser.Token.p_Ident_raw
                          s <- spaces_comments
                          let e = Tokens (Word f : s)
-                         class_call e <|> call_paren e <|> bareword_call_proto f e
+                         keep_bareword e <|> call_paren e <|> bareword_call_proto f e
 
-      -- | simply return this word, it will be handled nicely by Perl5Parser.Term.after_deref
-      class_call :: Node -> Perl5Parser ZZ
-      class_call f = do lookAhead (string "->")
-                        return$ toZZ [f]        
+      -- | simply return this word (useful for class->new and (xxx => ...)
+      keep_bareword :: Node -> Perl5Parser ZZ
+      keep_bareword f = do lookAhead (string "->" <|> string "=>")
+                           return$ toZZ [f]        
 
       call_paren :: Node -> Perl5Parser ZZ
       call_paren f = do l <- newNode"paren_option_expr"$ paren_option_expr

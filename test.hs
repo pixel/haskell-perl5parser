@@ -66,6 +66,7 @@ ok_exprs = [ ("1+2", "1+2")
            , ("$a->[0]", "$a->[(0)]")
            , ("$a->(0)", "$a->((0))")
            , ("$a->{aa}", "$a->{aa}")
+           , ("$a->{connect}", "$a->{connect}")
            , ("$a->{'aa'}", "$a->{('aa')}")
            -- ff {0} and ff [0] are invalid perl, must be disallowed somehow
            , ("$ a", "$ a")
@@ -88,6 +89,7 @@ ok_exprs = [ ("1+2", "1+2")
            , ("fork/2", "(fork)/2")
            , ("scalar/2/", "scalar/2/")
            , ("foo/2", "(foo)/2")
+           , ("{ aa => 1, connect => 2, x => 3 }", "{ ((((aa => 1), connect )=> 2), x )=> 3 }")
            ]
 
 test_exprs = concat $ map test ok_exprs
