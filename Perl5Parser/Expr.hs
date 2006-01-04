@@ -114,9 +114,6 @@ option_expr = option [] lexpr
 lexpr :: Perl5Parser [Node]
 lexpr = toList expr
 
-bareword = try$ do s <- Perl5Parser.Token.p_Ident_raw
-                   if elem s keywords then pzero else return s
-
 expr :: Perl5Parser Node
 expr = newNode"expr"$ expr_ >>= reduce
     where
@@ -143,15 +140,18 @@ expr = newNode"expr"$ expr_ >>= reduce
                          let e = Tokens (Word f : s)
                          call_paren e <|> bareword_call_proto f e
 
-      bareword_call = do f <- bareword
-                         s <- spaces_comments
-                         let e = Tokens (Word f : s)
-                         keep_bareword e <|> call_paren e <|> bareword_call_proto f e
+      get_bareword = try$ do f <- Perl5Parser.Token.p_Ident_raw
+                             s <- spaces_comments
+                             let e = Tokens (Word f : s)
+                             dont_keep_bareword <- fmap isNothing $ toMaybe $ lookAhead (try_string "->" <|> try_string "=>")
+                             if dont_keep_bareword && elem f keywords 
+                               then pzero 
+                               else return (f, e, dont_keep_bareword)
 
-      -- | simply return this word (useful for class->new and (xxx => ...)
-      keep_bareword :: Node -> Perl5Parser ZZ
-      keep_bareword f = do lookAhead (try_string "->" <|> try_string "=>")
-                           return$ toZZ [f]        
+      bareword_call = do (f, e, dont_keep_bareword) <- get_bareword
+                         if not dont_keep_bareword 
+                           then return (toZZ [e]) -- ^ simply return this word (useful for class->new and (xxx => ...)
+                           else call_paren e <|> bareword_call_proto f e
 
       call_paren :: Node -> Perl5Parser ZZ
       call_paren f = do l <- newNode"paren_option_expr"$ paren_option_expr

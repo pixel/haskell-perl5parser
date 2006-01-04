@@ -4,7 +4,7 @@ module Perl5Parser.ParserHelper
     -- ^ above are re-exported
     --
     , show4debug_pretty
-    , toList, pcons, seQ, manY, manyl, fold_many, lineBegin
+    , toList, pcons, seQ, manY, manyl, fold_many, lineBegin, toMaybe
     , anyTill, parse
     , isWordAny, isDigit_, isAlpha_, isSpace, balancedDelim, infix_cmds, keywords
     , charl, oneOfl, try_string
@@ -61,6 +61,8 @@ lineBegin :: GenParser tok st a -> GenParser tok st a
 lineBegin p = do pos <- getPosition
                  if sourceColumn pos == 1 then p else pzero
 
+toMaybe :: GenParser tok st a -> GenParser tok st (Maybe a)
+toMaybe p = fmap Just p <|> return Nothing
 
 
 anyTill :: CharParser st String -> CharParser st String
