@@ -144,7 +144,7 @@ known_builtin_prototypes =
     , ("localtime", ";$")
     , ("lock", "\\$")
     , ("log", ";$")
-    , ("lstat", "*")
+    , ("lstat", ";$") -- perl says it's "*", WTF??
     , ("mkdir", "$;$")
     , ("msgctl", "$$$")
     , ("msgget", "$$")
