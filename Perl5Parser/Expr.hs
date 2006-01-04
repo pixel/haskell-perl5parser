@@ -114,6 +114,9 @@ option_expr = option [] lexpr
 lexpr :: Perl5Parser [Node]
 lexpr = toList expr
 
+bareword = try$ do s <- Perl5Parser.Token.p_Ident_raw
+                   if elem s infix_cmds then pzero else return s
+
 expr :: Perl5Parser Node
 expr = newNode"expr"$ expr_ >>= reduce
     where
@@ -140,7 +143,7 @@ expr = newNode"expr"$ expr_ >>= reduce
                          let e = Tokens (Word f : s)
                          call_paren e <|> bareword_call_proto f e
 
-      bareword_call = do f <- Perl5Parser.Token.p_Ident_raw
+      bareword_call = do f <- bareword
                          s <- spaces_comments
                          let e = Tokens (Word f : s)
                          keep_bareword e <|> call_paren e <|> bareword_call_proto f e
