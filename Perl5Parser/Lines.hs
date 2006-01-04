@@ -21,6 +21,7 @@ lines_ = pcons line lines_
 
 line :: Perl5Parser Node
 line = format
+       <|> scheduled_declaration
        <|> sub_declaration
        <|> if_then
        <|> loop
@@ -41,6 +42,13 @@ format = newNode"format"$ seQ
 sub_declaration	= newNode"Statement::Sub"$ seQ
           [ symbol_ "sub"
           , toNodes$ word
+          , prototype
+          , subattrlist
+          , block <|> op ";"
+          ]
+
+scheduled_declaration = newNode"Statement::Scheduled"$ seQ
+          [ choice $ map symbol_ [ "BEGIN", "CHECK", "INIT", "END" ]
           , prototype
           , subattrlist
           , block <|> op ";"
