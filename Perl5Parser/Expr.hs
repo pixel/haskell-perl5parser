@@ -267,7 +267,7 @@ expr = newNode"expr"$ expr_ >>= reduce
               if z_priority left < z_priority right || z_priority left == z_priority right && z_associativity right == AssocLeft then
                   right { z_left = Just(add left op (fromJust$ z_left right)) }
               else
-                  left { z_right = Just(add (fromJust$ z_right left) op right) }
+                  left { z_right = Just(add (fromJust$ z_right left) op right), z_question_opened = question_opened left right }
 
       add_pre op right = -- ^ here we know that (z_right op) is Nothing
         seq (show4debug"add_pre"(op,right)) $
