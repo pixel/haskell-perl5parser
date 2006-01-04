@@ -171,12 +171,12 @@ expr = newNode"expr"$ expr_ >>= reduce
             -- | in case a bareword is not known to be a function, we don't allow it to take a /re/ as argument
             special_for_slash proto =
                 do if isNothing proto then lookAhead (char '/') else pzero
-                   no_para
+                   no_para proto
 
-            no_para = to_call_no_para e
+            no_para proto = if isNothing proto then return (toZZ [e]) else to_call_no_para e
 
             normal_choices proto = choice ((if max > 0 then [with_para] else [])
-                                           ++ (if min == 0 then [no_para] else []))
+                                           ++ (if min == 0 then [no_para proto] else []))
                 where
                   (min, max) = fromMaybe (0, 99) (proto >>= parse_prototype)
                   prio = if max == 1 then prio_named_unary else prio_normal_call
