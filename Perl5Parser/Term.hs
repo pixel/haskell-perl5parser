@@ -34,7 +34,9 @@ scalar_maybe_subscript = do a <- scalar
                             option a (scalar_subscript a)
     where
       scalar_subscript a = newNode"subscript"$ fmap (a :) p
-      p = squareB_option_expr <|> curlyB_option_expr
+      p = seQ [ squareB_option_expr <|> curlyB_option_expr
+              , manY simple_subscript
+              ]
 
 -- | @z @z[...] @z{...}
 array_maybe_slice = do a <- array
@@ -52,6 +54,11 @@ anonymous =     newNode"[]" squareB_option_expr
 declvar = newNode"declvar"$ pcons (any_symbol_node [ "my", "our", "local" ]) lexpr
 
 
+
+simple_subscript = squareB_option_expr 
+                   <|> curlyB_option_expr
+                   <|> toList grouped
+
 ----------------------------------------
 after_deref :: Perl5Parser [Node]
 after_deref = fmap concat (many1 simple_subscript)
@@ -60,9 +67,6 @@ after_deref = fmap concat (many1 simple_subscript)
                    <|> fmap Tokens Perl5Parser.Token.p_Ident 
                    <|> fmap Tokens (toList Perl5Parser.Token.Quote.p_Double)
                    <|> fmap Tokens (toList Perl5Parser.Token.Quote.p_Single)
-          simple_subscript = squareB_option_expr 
-                             <|> curlyB_option_expr
-                             <|> toList grouped
 
 ----------------------------------------
 -- E  =  [@%$&*] space* R <|> $# R
