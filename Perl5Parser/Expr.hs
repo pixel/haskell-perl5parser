@@ -78,6 +78,8 @@ data ZZ = ZZ { z_op :: NodeName
              }
 
 show_long_ZZ = False
+show_debug = False
+debug s e = if show_debug then show4debug s e else e
 
 instance Show ZZ where
     show (ZZ (NodeName"") Nothing middle Nothing _ _ _) = verbatim middle
@@ -216,7 +218,7 @@ expr = newNode"expr"$ expr_ >>= reduce
       toZZ_ (fixity, prio, (l,s)) = ZZ (NodeName s) Nothing [l] Nothing prio (fixity_to_associativity fixity) 0
 
       get_middle z = do z' <- middle z
-                        seq (show4debug"get_middle" (z, z')) $ if z_priority z' == z_priority z then get_middle z' else reduce_inside z'
+                        seq (debug"get_middle" (z, z')) $ if z_priority z' == z_priority z then get_middle z' else reduce_inside z'
                      <|> reduce_local z
           where reduce_local z = fmap toZZ (reduce z)
                 reduce_inside z = do left2 <- fmap_maybe reduce_local (z_left z)
@@ -225,7 +227,7 @@ expr = newNode"expr"$ expr_ >>= reduce
       middle e = 
           let postParsers' = if z_question_opened e > 0 || z_priority e == 19 then postParsers ++ [ operator_to_parser (infixRight, 18, ":") ] else postParsers in
           do op@(fixity, _prio, (_l,s)) <- choice postParsers'
-             return$ show4debug"middle found" s
+             return$ debug"middle found" s
              t <- if fixity == Postfix then return Nothing 
                   else if s == "->" then fmap (Just . toZZ) after_deref
                   else fmap Just term_with_pre <|> 
@@ -286,7 +288,7 @@ expr = newNode"expr"$ expr_ >>= reduce
       add_maybe left op (Just right) = add left op right
 
       add :: ZZ -> ZZ -> ZZ -> ZZ
-      add left op right = seq (show4debug "add" (left, op, right)) $ show4debug "add returns" $
+      add left op right = seq (debug "add" (left, op, right)) $ debug "add returns" $
           if z_priority left == z_priority op && z_associativity op == AssocNone then
               error$ show (z_op left) ++ " is non associative"
           else if z_priority left < z_priority op || z_priority left == z_priority op && z_associativity op == AssocLeft then
@@ -302,7 +304,7 @@ expr = newNode"expr"$ expr_ >>= reduce
                   left { z_right = Just(add (fromJust$ z_right left) op right), z_question_opened = question_opened left right }
 
       add_pre op right = -- ^ here we know that (z_right op) is Nothing
-        seq (show4debug"add_pre"(op,right)) $
+        seq (debug"add_pre"(op,right)) $
           if z_priority op < z_priority right then
               case z_left right of
                 Nothing -> op { z_right = Just right } -- eg: op = "1 +" and right is "not 2"
@@ -311,7 +313,7 @@ expr = newNode"expr"$ expr_ >>= reduce
               op { z_right = Just right, z_question_opened = question_opened op right }
 
       add_post left op = -- ^ here we know that (z_left op) is Nothing
-        seq (show4debug"add_post"(left,op)) $
+        seq (debug"add_post"(left,op)) $
           if z_priority op < z_priority left || z_priority op == z_priority left && z_associativity op == AssocRight then
               left { z_right = Just (add_post (fromJust$ z_right left) op)
                    , z_question_opened = question_opened left op }
