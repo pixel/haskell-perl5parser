@@ -40,8 +40,7 @@ format = newNode"format"$ seQ
          ]
 
 sub_declaration	= newNode"Statement::Sub"$ seQ
-          [ symbol_ "sub"
-          , toNodes$ Perl5Parser.Token.p_Ident
+          [ try$ seQ [ symbol_ "sub", toNodes$ Perl5Parser.Token.p_Ident ] -- ^ try needed for anonymous_sub
           , prototype
           , subattrlist
           , block <|> op ";"
