@@ -160,7 +160,7 @@ expr = newNode"expr"$ expr_ >>= reduce
                         to_call [f] prio_max (toZZ [l])
 
       call_print :: String -> Node -> Perl5Parser ZZ
-      call_print f e = if f == "print" then call_print_ else pzero
+      call_print f e = if f == "print" || f == "printf" then call_print_ else pzero
           where call_print_ =
                     do z <- lookAhead (bareword_call_proto f [e])
                        has <- has_file_handle z
@@ -171,8 +171,8 @@ expr = newNode"expr"$ expr_ >>= reduce
                 with_filehandle = do t <- fmap Tokens Perl5Parser.Token.p_Ident <|> scalar
                                      bareword_call_proto f [e, t]
 
-                has_file_handle (ZZ (NodeName"") Nothing [Call (NodeName"call", Tokens (Word "print" : _) : para)] Nothing _ _ _) = is_filehandle para
-                has_file_handle (ZZ (NodeName"call") Nothing [Tokens [Word "print"]] Nothing _ _ _) = return False
+                has_file_handle (ZZ (NodeName"") Nothing [Call (NodeName"call", Tokens (Word f' : _) : para)] Nothing _ _ _) | f == f' = is_filehandle para
+                has_file_handle (ZZ (NodeName"call") Nothing [Tokens [Word f']] Nothing _ _ _) | f == f' = return False
                 has_file_handle z = show4debug "call_print, weird" z `seq` return False
                 is_filehandle (Node(NodeName"$", _) : _) = return True
                 is_filehandle (Call (NodeName"call", (Tokens(Word s : _) : _)) : _) = fmap isNothing (get_prototype s)
