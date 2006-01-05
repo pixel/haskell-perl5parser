@@ -164,7 +164,7 @@ expr = newNode"expr"$ expr_ >>= reduce
           where call_print_ =
                     do z <- lookAhead (bareword_call_proto f [e])
                        has <- has_file_handle z
-                       if show4debug"call_print has_file_handle" has 
+                       if debug"call_print has_file_handle" has 
                          then with_filehandle 
                          else bareword_call_proto f [e]
 
