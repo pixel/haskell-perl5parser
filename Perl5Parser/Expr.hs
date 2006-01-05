@@ -133,12 +133,12 @@ expr = newNode"expr"$ expr_ >>= reduce
                             get_middle (add_pre (toZZ_ l) t)
 
       ampersand_call = do f <- func
-                          call_paren f <|> to_call_no_para f
+                          call_paren f <|> to_call_no_para [f]
 
       filetest_call = do f <- Perl5Parser.Token.p_Filetest_raw
                          s <- spaces_comments
                          let e = Tokens (Word f : s)
-                         call_paren e <|> bareword_call_proto f e
+                         call_paren e <|> bareword_call_proto f [e]
 
       get_bareword = try$ do f <- Perl5Parser.Token.p_Ident_raw
                              s <- spaces_comments
@@ -151,13 +151,31 @@ expr = newNode"expr"$ expr_ >>= reduce
       bareword_call = do (f, e, dont_keep_bareword) <- get_bareword
                          if not dont_keep_bareword 
                            then return (toZZ [e]) -- ^ simply return this word (useful for class->new and (xxx => ...)
-                           else call_paren e <|> bareword_call_proto f e
+                           else call_paren e <|> call_print f e <|> bareword_call_proto f [e]
 
       call_paren :: Node -> Perl5Parser ZZ
       call_paren f = do l <- newNode"paren_option_expr"$ paren_option_expr
                         to_call [f] prio_max (toZZ [l])
 
-      bareword_call_proto :: String -> Node -> Perl5Parser ZZ
+      call_print :: String -> Node -> Perl5Parser ZZ
+      call_print f e = if f == "print" then call_print_ else pzero
+          where call_print_ =
+                    do z <- lookAhead (bareword_call_proto f [e])
+                       if show4debug"call_print has_file_handle" (has_file_handle z) 
+                         then with_filehandle 
+                         else bareword_call_proto f [e]
+
+                with_filehandle = do t <- fmap Tokens Perl5Parser.Token.p_Ident <|> scalar
+                                     bareword_call_proto f [e, t]
+
+                has_file_handle (ZZ (NodeName"") Nothing [Call (NodeName"call", Tokens (Word "print" : _) : para)] Nothing _ _ _) = is_filehandle para
+                has_file_handle (ZZ (NodeName"call") Nothing [Tokens [Word "print"]] Nothing _ _ _) = False
+                has_file_handle z = show4debug "call_print, weird" z `seq` False
+                is_filehandle (Node(NodeName"$", _) : _) = True
+                is_filehandle (Call (NodeName"call", (Tokens(Word _ : _) : _)) : _) = True
+                is_filehandle _ = False
+
+      bareword_call_proto :: String -> [Node] -> Perl5Parser ZZ
       bareword_call_proto f e = 
           do proto <- get_prototype f
              special_for_slash proto <|> normal_choices proto
@@ -168,7 +186,7 @@ expr = newNode"expr"$ expr_ >>= reduce
                 do if isNothing proto then lookAhead (char '/') else pzero
                    no_para proto
 
-            no_para proto = if isNothing proto then return (toZZ [e]) else to_call_no_para e
+            no_para proto = if isNothing proto then return (toZZ e) else to_call_no_para e
 
             normal_choices proto = choice ((if max > 0 then [with_para] else [])
                                            ++ (if min == 0 then [no_para proto] else []))
@@ -177,16 +195,16 @@ expr = newNode"expr"$ expr_ >>= reduce
                   prio = if max == 1 then prio_named_unary else prio_normal_call
 
                   with_para = do b <- block
-                                 if max == 1 then to_call [e] prio (toZZ b) else with_block_para b
+                                 if max == 1 then to_call e prio (toZZ b) else with_block_para b
                               <|> do t <- term_with_pre
-                                     to_call [e] prio t
+                                     to_call e prio t
 
                   with_block_para b = do t <- term_with_pre -- ^ map { ... } @foo
-                                         to_call (e : b) prio t
-                                  <|> do to_call [e] prio (toZZ b) -- ^ for functions we don't have the prototype, which can be either "f { ...} expr"  or "f { ... }, expr"
+                                         to_call (e ++ b) prio t
+                                  <|> do to_call e prio (toZZ b) -- ^ for functions we don't have the prototype, which can be either "f { ...} expr"  or "f { ... }, expr"
 
       to_call_no_para f =
-          let call = ZZ (NodeName"call") Nothing [f] Nothing prio_max AssocNone 0 in
+          let call = ZZ (NodeName"call") Nothing f Nothing prio_max AssocNone 0 in
           return call
 
       to_call f prio child = 

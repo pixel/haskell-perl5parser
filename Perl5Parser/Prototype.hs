@@ -53,6 +53,7 @@ unknown_builtin_prototypes =
     , ("my", "$")
     , ("our", "$")
     , ("pos", ";$")
+    , ("print", "@")
     , ("prototype", "$")
     , ("readpipe", "$")
     , ("scalar", "$")
