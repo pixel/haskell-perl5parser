@@ -30,6 +30,8 @@ import qualified Perl5Parser.Serialize
 import Perl5Parser.Common
 import Perl5Parser.Types
 
+show_debug = False
+debug s e = if show_debug then show4debug s e else e
 
 show4debug_pretty :: Perl5Parser.Serialize.Serialize a => String -> a -> a
 show4debug_pretty s e = seq (unsafePerformIO $ putStrLn (s ++ ": " ++ Perl5Parser.Serialize.with_parentheses e)) e
@@ -187,7 +189,7 @@ any_symbol_node l = fmap Tokens $ any_symbol l
 word_node = fmap Tokens word
 
 newNode :: String -> Perl5Parser [Node] -> Perl5Parser Node
-newNode s r = fmap (\l -> show4debug "newNode: " (Node(NodeName s, l))) r <?> s
+newNode s r = fmap (\l -> debug "newNode: " (Node(NodeName s, l))) r <?> s
 
 toNodes :: Perl5Parser [TokenT] -> Perl5Parser [Node]
 toNodes = toList . fmap Tokens
