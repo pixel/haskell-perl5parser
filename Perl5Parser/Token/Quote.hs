@@ -64,7 +64,7 @@ inside_string c = fmap (\s -> (cc, s)) (f "" 1)
                f (c2 : c : accu) n
         <|> do c <- beg
                f (c : accu) (n+1)
-        <|> do end
+        <|> do c <- end
                if n == 1 then return (reverse accu) else f (c : accu) (n-1)
         <|> do c <- anyChar
                f (c : accu) n
