@@ -82,7 +82,7 @@ data TokenT =
   | Symbol String
   | Operator String
   | Pod String
-  | Label String [String]
+  | Label String [TokenT]
     deriving Show
 
 data Node = 

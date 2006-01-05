@@ -26,10 +26,10 @@ p_Pod_raw = seQ
 p_Label :: Perl5Parser [TokenT]
 p_Label = pcons p_Label_raw spaces_comments
 p_Label_raw = try$ do s <- word_raw
-                      sp <- spaces_no_nl
-                      operator ":"
+                      sp <- fmap (map Whitespace) spaces_no_nl
+                      l <- operator ":"
                       notFollowedBy (char ':') -- for pkg::f()
-                      return$ Label s sp
+                      return$ Label s (sp ++ l)
 
 -- | :: a ::b  c:: ::d:: e::f
 p_Ident :: Perl5Parser [TokenT]

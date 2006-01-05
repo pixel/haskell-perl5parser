@@ -30,7 +30,7 @@ import qualified Perl5Parser.Serialize
 import Perl5Parser.Common
 import Perl5Parser.Types
 
-show_debug = False
+show_debug = True
 debug s e = if show_debug then show4debug s e else e
 
 show4debug_pretty :: Perl5Parser.Serialize.Serialize a => String -> a -> a

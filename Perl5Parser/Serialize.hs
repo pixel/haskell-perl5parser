@@ -37,8 +37,8 @@ instance Serialize TokenT where
     verbatim (QuoteLike t s) = to_s_QuoteLike t s
     verbatim (Regexp t) = to_s_Regexp t
     verbatim (Separator sep l s) = to_s_Separator sep ++ concat l ++ s
-    verbatim (HereDoc co name) = verbatim co ++ verbatim name
-    verbatim (Label label co) = label ++ concat co
+    verbatim (HereDoc co name) = "<<" ++ verbatim co ++ verbatim name
+    verbatim (Label label co) = label ++ verbatim co
     verbatim (Number _ s) = s
     verbatim (Word s) = s
     verbatim (Whitespace s) = s
