@@ -97,6 +97,7 @@ ok_exprs = [ ("1+2", "1+2")
            , ("print F", "print F")
            , ("print F 1", "print F 1")
            , ("print F::G 1", "print F::G 1")
+           , ("print cos 1", "print (cos 1)")
            -- complex ?: calls
            , ("($v ? N() . '; ' . N() . ': ' . $w : N())", "($v ? ((((N() ). '; ' ). ((N() ). ': ' )). $w ): (N()))")
            , ("$a = 0 || !1 ? 2 : 3", "$a = ((0 || (!1 ))? 2 : 3)")

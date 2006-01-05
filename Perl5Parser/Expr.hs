@@ -161,7 +161,8 @@ expr = newNode"expr"$ expr_ >>= reduce
       call_print f e = if f == "print" then call_print_ else pzero
           where call_print_ =
                     do z <- lookAhead (bareword_call_proto f [e])
-                       if show4debug"call_print has_file_handle" (has_file_handle z) 
+                       has <- has_file_handle z
+                       if show4debug"call_print has_file_handle" has 
                          then with_filehandle 
                          else bareword_call_proto f [e]
 
@@ -169,11 +170,11 @@ expr = newNode"expr"$ expr_ >>= reduce
                                      bareword_call_proto f [e, t]
 
                 has_file_handle (ZZ (NodeName"") Nothing [Call (NodeName"call", Tokens (Word "print" : _) : para)] Nothing _ _ _) = is_filehandle para
-                has_file_handle (ZZ (NodeName"call") Nothing [Tokens [Word "print"]] Nothing _ _ _) = False
-                has_file_handle z = show4debug "call_print, weird" z `seq` False
-                is_filehandle (Node(NodeName"$", _) : _) = True
-                is_filehandle (Call (NodeName"call", (Tokens(Word _ : _) : _)) : _) = True
-                is_filehandle _ = False
+                has_file_handle (ZZ (NodeName"call") Nothing [Tokens [Word "print"]] Nothing _ _ _) = return False
+                has_file_handle z = show4debug "call_print, weird" z `seq` return False
+                is_filehandle (Node(NodeName"$", _) : _) = return True
+                is_filehandle (Call (NodeName"call", (Tokens(Word s : _) : _)) : _) = fmap isNothing (get_prototype s)
+                is_filehandle _ = return False
 
       bareword_call_proto :: String -> [Node] -> Perl5Parser ZZ
       bareword_call_proto f e = 
