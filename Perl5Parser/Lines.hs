@@ -41,7 +41,7 @@ format = newNode"format"$ seQ
 
 sub_declaration	= newNode"Statement::Sub"$ seQ
           [ symbol_ "sub"
-          , toNodes$ word
+          , toNodes$ Perl5Parser.Token.p_Ident
           , prototype
           , subattrlist
           , block <|> op ";"
