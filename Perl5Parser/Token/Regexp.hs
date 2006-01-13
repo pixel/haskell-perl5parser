@@ -16,31 +16,34 @@ p_Match = p_Match_raw <|> p_Match_m
 
 p_Match_raw = do char '/'
                  (_, s) <- inside_string '/'
-                 options <- regexp_options
+                 options <- m_regexp_options
                  return$ Match Nothing s options
 
 p_Match_m = do (structure, s) <- user_delimited_string "m"
-               options <- regexp_options
+               options <- m_regexp_options
                return$ Match (Just structure) s options
 
 p_Qr :: Perl5Parser RegexpT
 p_Qr = do (structure, s) <- user_delimited_string "qr"
-          options <- regexp_options
+          options <- qr_regexp_options
           return$ Qr structure s options
 
 p_Substitute :: Perl5Parser RegexpT
 p_Substitute = do (structure, s1, s2) <- user_delimited_ter "s"
-                  options <- regexp_options
+                  options <- s_regexp_options
                   return$ Substitute structure s1 s2 options
 
 p_Transliterate :: Perl5Parser RegexpT
 p_Transliterate = p "tr" <|> p "y"
     where p name = do (structure, s1, s2) <- user_delimited_ter name
-                      options <- regexp_options
+                      options <- tr_regexp_options
                       return$ Transliterate (name, structure) s1 s2 options
 
 
-regexp_options = many (oneOf "egimosx")
+m_regexp_options = many (oneOf "cgimosx")
+s_regexp_options = many (oneOf "egimosx")
+qr_regexp_options = many (oneOf "imosx")
+tr_regexp_options = many (oneOf "cds")
 
 {- one must handle this:
 print(q # foo
