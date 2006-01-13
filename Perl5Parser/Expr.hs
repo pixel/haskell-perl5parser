@@ -1,6 +1,6 @@
 module Perl5Parser.Expr
     ( lexpr, expr, paren_expr, paren_option_expr, option_expr
-    , curlyB_option_expr, squareB_option_expr
+    , curlyB_option_expr, curlyB_option_expr_special, squareB_option_expr
     ) where
 
 import List (partition, concatMap, sortBy)
@@ -109,6 +109,14 @@ squareB_option_expr = seQ [ op "[", option_expr, op "]" ]
 curlyB_option_expr = do open <- op "{"
                         l <- try (pcons word_node (op "}")) <|> seQ [ option_expr, op "}" ]
                         return (open ++ l)
+ 
+-- | mostly similar to curlyB_option_expr, but we need to handle {^XXX}, 
+curlyB_option_expr_special =
+    do open <- op "{"
+       l <- pcons (fmap (\e -> Tokens [ Word e ]) (pcons (char '^') word_raw)) (op "}")
+            <|> try (pcons word_node (op "}")) 
+            <|> seQ [ option_expr, op "}" ]
+       return (open ++ l)
 
 option_expr :: Perl5Parser [Node]
 option_expr = option [] lexpr

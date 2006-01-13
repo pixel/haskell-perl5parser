@@ -105,7 +105,7 @@ var_context_ s p between l_magics =
 var_context_after :: String -> Perl5Parser [Node]
 var_context_after s = do dollars <- many (op "$")
                          fmap (\l -> dollars ++ l) after_end <|> catch_magic_PID s dollars
-    where after_end = curlyB_option_expr 
+    where after_end = curlyB_option_expr_special
                       <|> toNodes Perl5Parser.Token.p_Ident 
                       <|> toNodes (pcons (fmap Word $ many1 digit) spaces_comments)
           catch_magic_PID s dollars = 
