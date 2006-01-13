@@ -77,8 +77,8 @@ data ZZ = ZZ { z_op :: NodeName
              , z_question_opened :: Integer
              }
 
-show_long_ZZ = False
-show_debug = False
+show_long_ZZ = True
+show_debug = True
 debug s e = if show_debug then show4debug s e else e
 
 instance Show ZZ where
@@ -234,17 +234,21 @@ expr = newNode"expr"$ expr_ >>= reduce
                   else fmap Just term_with_pre <|> 
                       (if s == "," || s == "=>" then return Nothing else pzero)
 
-             e2 <- if s == ":" && z_question_opened e == 0 then reduce_assign_for_ternary e else return e
+             e2 <- if s == ":" then reduce_assign_for_ternary e else return e
              let e3 = add_maybe e2 (toZZ_ op) t
              let question_opened = z_question_opened e3 + (case s of { "?" -> 1; ":" -> -1; _ -> 0 })
              return e3 { z_question_opened = question_opened }
 
-      reduce_assign_for_ternary assign =
+      reduce_assign_for_ternary assign | z_priority assign == 19 =
           case z_left assign of
-            Just question -> 
+            Just question@(ZZ (NodeName "?") _ _ _ _ _ _) -> 
                 do assign' <- reduce (assign { z_left = z_right question })
-                   return $ question { z_right = Just (toZZ assign') }
-            Nothing -> fail "internal error reduce_assign_for_ternary"
+                   return $ show4debug "reduce_assign_for_ternary" $ question { z_right = Just (toZZ assign') }
+            _ -> return assign
+      reduce_assign_for_ternary e | z_priority e == prio_normal_call =
+          do right' <- fmap_maybe reduce_assign_for_ternary (z_right e)
+             return e { z_right = right' }
+      reduce_assign_for_ternary e = return e
 
       reduce :: ZZ -> Perl5Parser [Node]
       reduce e = reduce_ e
