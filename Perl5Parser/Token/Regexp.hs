@@ -15,8 +15,7 @@ p_Match :: Perl5Parser RegexpT
 p_Match = p_Match_raw <|> p_Match_m
 
 p_Match_raw = do char '/'
-                 s <- many (satisfy (/= '/'))
-                 char '/'
+                 (_, s) <- inside_string '/'
                  options <- regexp_options
                  return$ Match Nothing s options
 
