@@ -77,8 +77,8 @@ data ZZ = ZZ { z_op :: NodeName
              , z_question_opened :: Integer
              }
 
-show_long_ZZ = True
-show_debug = True
+show_long_ZZ = False
+show_debug = False
 debug s e = if show_debug then show4debug s e else e
 
 instance Show ZZ where
