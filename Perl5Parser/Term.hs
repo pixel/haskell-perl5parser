@@ -15,7 +15,7 @@ term = anonymous
        <|> grouped
 
        <|> arraylen -- before scalar
-       <|> star
+       <|> star_maybe_subscript
        <|> hash
        <|> scalar_maybe_subscript
        <|> array_maybe_slice
@@ -30,12 +30,11 @@ paren_next_slice = squareB_option_expr
 
 -- | $z $z[...] $z{...}
 scalar_maybe_subscript = do a <- scalar
-                            option a (scalar_subscript a)
-    where
-      scalar_subscript a = newNode"subscript"$ fmap (a :) p
-      p = seQ [ squareB_option_expr <|> curlyB_option_expr
-              , manY simple_subscript
-              ]
+                            option a (newNode"subscript"$ fmap (a :) subscript)
+
+-- | $z $z[...] $z{...}
+star_maybe_subscript = do a <- star
+                          option a (newNode"subscript"$ fmap (a :) subscript)
 
 -- | @z @z[...] @z{...}
 array_maybe_slice = do a <- array
@@ -49,6 +48,10 @@ array_maybe_slice = do a <- array
 anonymous =     newNode"[]" squareB_option_expr
             <|> newNode"{}" curlyB_option_expr
             <|> anonymous_sub
+
+subscript = seQ [ squareB_option_expr <|> curlyB_option_expr
+                , manY simple_subscript
+                ]
 
 simple_subscript = squareB_option_expr 
                    <|> curlyB_option_expr
