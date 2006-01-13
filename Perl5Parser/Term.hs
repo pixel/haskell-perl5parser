@@ -67,6 +67,8 @@ after_deref = fmap concat (many1 simple_subscript)
 -- E  =  [@%$&*] space* R <|> $# R
 -- R  =  $* (ident <|> { expr })
 
+op s = try_string s >> return (Tokens [ Operator s ])
+
 arraylen = var_context "$#" (return []) []
 scalar   = var_context "$" spaces_comments magic_scalars
 star     = var_context "*" spaces_comments []
@@ -74,30 +76,40 @@ hash     = var_context "%" spaces_comments magic_hashes
 array    = var_context "@" spaces_comments magic_arrays
 func     = var_context_ "&" (try one_ampersand_only) spaces_comments []
     -- | ugly special case to handle "eval {} && ...", so here we accept only one ampersand
-    where one_ampersand_only = try$ do s <- operator_node "&"
+    where one_ampersand_only = try$ do s <- op "&"
                                        notFollowedBy (char '&')
                                        return s
 
 var_context :: String -> Perl5Parser [TokenT] -> [String] -> Perl5Parser Node
-var_context s between = var_context_ s (try$ operator_node s) between
+var_context s between = var_context_ s (op s) between
     
 var_context_ :: String -> Perl5Parser Node -> Perl5Parser [TokenT] -> [String] -> Perl5Parser Node
 var_context_ s p between l_magics = 
     do pval <- p
        bval <- between
-       l <- var_context_after <|> magics
+       l <- var_context_after s <|> if has_comment bval then pzero else magics
        newNode s $ return (pval : Tokens bval : l) -- ^ do magics after var_context_after to handle $:: vs $:
     where
       magics = do magic <- choice (map try_string l_magics)
                   l <- spaces_comments
                   return [Tokens $ Word magic : l]
 
+      has_comment = any is_comment
+      is_comment (Comment _) = True
+      is_comment _ = False
 
-var_context_after :: Perl5Parser [Node]
-var_context_after = seQ [ many (operator_node "$"), after_end ]
+
+var_context_after :: String -> Perl5Parser [Node]
+var_context_after s = do dollars <- many (op "$")
+                         fmap (\l -> dollars ++ l) after_end <|> catch_magic_PID s dollars
     where after_end = curlyB_option_expr 
                       <|> toNodes Perl5Parser.Token.p_Ident 
                       <|> toNodes (pcons (fmap Word $ many1 digit) spaces_comments)
+          catch_magic_PID s dollars = 
+              if s == "$" && length dollars > 0 then
+                  do sp <- spaces_comments
+                     return$ tail dollars ++ [Tokens (Word "$" : sp)]
+              else pzero
 
 magic_scalars = [ "&", "`", "'", "+", "*", ".", "/", "|", "\\", "\"", ";", "%", "=", "-", ")", "#", "~", ":", "?", "!", "@", "$", "<", ">", "(", "0", "[", "]", "}", ",", "#+", "#-", "^L", "^A", "^E", "^C", "^D", "^F", "^H", "^I", "^M", "^N", "^O", "^P", "^R", "^S", "^T", "^V", "^W", "^X", "^" ]
 magic_arrays = [ "+", "-", "*" ]
