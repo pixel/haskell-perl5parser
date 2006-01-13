@@ -155,6 +155,7 @@ expr = newNode"expr"$ expr_ >>= reduce
                            then return (toZZ [e]) -- ^ simply return this word (useful for class->new and (xxx => ...)
                            else may_call_paren f e <|> call_print f e <|> bareword_call_proto f [e]
           where may_call_paren f e = if f == "return" then pzero else call_paren e
+                -- ^ allow: return ($v)[$w]
 
       call_paren :: Node -> Perl5Parser ZZ
       call_paren f = do l <- newNode"paren_option_expr"$ paren_option_expr
