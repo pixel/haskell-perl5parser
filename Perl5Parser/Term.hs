@@ -72,17 +72,21 @@ scalar   = var_context "$" spaces_comments magic_scalars
 star     = var_context "*" spaces_comments []
 hash     = var_context "%" spaces_comments magic_hashes
 array    = var_context "@" spaces_comments magic_arrays
-func     = var_context_ "&" (pcons (try one_ampersand_only) (toNodes spaces_comments)) []
+func     = var_context_ "&" (try one_ampersand_only) spaces_comments []
     -- | ugly special case to handle "eval {} && ...", so here we accept only one ampersand
     where one_ampersand_only = try$ do s <- operator_node "&"
                                        notFollowedBy (char '&')
                                        return s
 
 var_context :: String -> Perl5Parser [TokenT] -> [String] -> Perl5Parser Node
-var_context s between = var_context_ s (pcons (try$ operator_node s) (toNodes between))
+var_context s between = var_context_ s (try$ operator_node s) between
     
-var_context_ :: String -> Perl5Parser [Node] -> [String] -> Perl5Parser Node
-var_context_ s p l_magics = newNode s $ seQ [ p, var_context_after <|> magics ] -- ^ do magics after var_context_after to handle $:: vs $:
+var_context_ :: String -> Perl5Parser Node -> Perl5Parser [TokenT] -> [String] -> Perl5Parser Node
+var_context_ s p between l_magics = 
+    do pval <- p
+       bval <- between
+       l <- var_context_after <|> magics
+       newNode s $ return (pval : Tokens bval : l) -- ^ do magics after var_context_after to handle $:: vs $:
     where
       magics = do magic <- choice (map try_string l_magics)
                   l <- spaces_comments
