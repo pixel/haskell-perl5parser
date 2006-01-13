@@ -1,4 +1,4 @@
-OPT = # -O
+GHCFLAGS = -W
 
 Perl5Parser_HS = Perl5Parser/Common.hs Perl5Parser/Types.hs Perl5Parser/Serialize.hs Perl5Parser/ParserHelper.hs Perl5Parser/Prototype.hs Perl5Parser/Token/Number.hs Perl5Parser/Token/Quote.hs Perl5Parser/Token/QuoteLike.hs Perl5Parser/Token/Regexp.hs Perl5Parser/Token/HereDoc.hs Perl5Parser/Token.hs Perl5Parser/Term.hs Perl5Parser/Expr.hs Perl5Parser/Lines.hs Perl5Parser/Document.hs
 
@@ -8,16 +8,16 @@ all: TAGS test
 	./test /tmp/t.pl && diff -u /tmp/t.pl /tmp/t.pl.new
 
 test: $(Perl5Parser_O) test.o
-	ghc -W $^ -o $@ -package parsec
+	ghc $(GHCFLAGS) $^ -o $@ -package parsec
 
 %.o: %.hs
-	ghc -W -c $(OPT) $<
+	ghc $(GHCFLAGS) -c $<
 
 test.o: test.hs
-	ghc -c $<
+	ghc $(GHCFLAGS) -c $<
 
 %.o-boot: %.hs-boot
-	ghc -W -c $<
+	ghc $(GHCFLAGS) -c $<
 
 clean:
 	find -name "*.o" | xargs rm -f
