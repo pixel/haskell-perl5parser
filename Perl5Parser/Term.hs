@@ -74,7 +74,7 @@ op s = try_string s >> return (Tokens [ Operator s ])
 
 arraylen = var_context "$#" (return []) []
 scalar   = var_context "$" spaces_comments magic_scalars
-star     = var_context "*" spaces_comments []
+star     = var_context "*" spaces_comments magic_scalars
 hash     = var_context "%" spaces_comments magic_hashes
 array    = var_context "@" spaces_comments magic_arrays
 func     = var_context_ "&" (try one_ampersand_only) spaces_comments []
@@ -109,7 +109,7 @@ var_context_after s = do dollars <- many (op "$")
                       <|> toNodes Perl5Parser.Token.p_Ident 
                       <|> toNodes (pcons (fmap Word $ many1 digit) spaces_comments)
           catch_magic_PID s dollars = 
-              if s == "$" && length dollars > 0 then
+              if (s == "$" || s == "*") && length dollars > 0 then
                   do sp <- spaces_comments
                      return$ tail dollars ++ [Tokens (Word "$" : sp)]
               else pzero
