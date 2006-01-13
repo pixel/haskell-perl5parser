@@ -62,6 +62,9 @@ unknown_builtin_prototypes =
     , ("tied", "$")
     , ("undef", ";$")
     , ("untie", "$")
+    , ("__FILE__", "")
+    , ("__LINE__", "")
+    , ("__PACKAGE__", "")
     ]
 
 -- | obtained using perl "prototype" function on @pos and @neg functions from perl_keyword.pl (in perl source)
