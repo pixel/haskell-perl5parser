@@ -47,7 +47,7 @@ sub_declaration	= newNode"Statement::Sub"$ seQ
           ]
 
 scheduled_declaration = newNode"Statement::Scheduled"$ seQ
-          [ choice $ map symbol_ [ "BEGIN", "CHECK", "INIT", "END" ]
+          [ choice $ map symbol_ [ "BEGIN", "CHECK", "INIT", "END", "AUTOLOAD" ] -- ^ cf AutoLoader.pm for such an AUTOLOAD example
           , prototype
           , subattrlist
           , block <|> op ";"
