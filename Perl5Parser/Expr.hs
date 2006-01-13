@@ -175,6 +175,7 @@ expr = newNode"expr"$ expr_ >>= reduce
                 has_file_handle (ZZ (NodeName"call") Nothing [Tokens [Word f']] Nothing _ _ _) | f == f' = return False
                 has_file_handle z = show4debug "call_print, weird" z `seq` return False
                 is_filehandle (Node(NodeName"$", _) : _) = return True
+                is_filehandle (Call (NodeName"<<", (Node(NodeName"$", _) : _)) : _) = return True
                 is_filehandle (Call (NodeName"call", (Tokens(Word s : _) : _)) : _) = fmap isNothing (get_prototype s)
                 is_filehandle _ = return False
 
