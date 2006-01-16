@@ -43,7 +43,7 @@ p_Ident_raw :: Perl5Parser String
 p_Ident_raw = seQ [ try_string "::", option "" p_Ident_raw_cont ]
               <|> seQ [ word_raw, option "" p_Ident_raw_cont ]
 
-p_Ident_raw_cont = seQ [ try_string "'", word_raw, option "" p_Ident_raw_cont ]
+p_Ident_raw_cont = seQ [ try (seQ [ string "'", word_raw ]), option "" p_Ident_raw_cont ]
                    <|> p_Ident_raw
 
 -- | file test functions (eg: -x '/sbin/halt')
