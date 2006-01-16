@@ -27,6 +27,7 @@ p_Pod_raw = seQ
 p_Label :: Perl5Parser [TokenT]
 p_Label = pcons p_Label_raw spaces_comments
 p_Label_raw = try$ do s <- word_raw
+                      if s == "s" then pzero else return []
                       sp <- fmap (map Whitespace) spaces_no_nl
                       l <- notFollowedBy_ (char ':') (operator ":") -- for pkg::f()                      
                       return$ Label s (sp ++ l)
