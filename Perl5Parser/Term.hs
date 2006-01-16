@@ -93,9 +93,7 @@ hash     = var_context "%" spaces_comments magic_hashes
 array    = var_context "@" spaces_comments magic_arrays
 func     = var_context_ "&" (try one_ampersand_only) spaces_comments []
     -- | ugly special case to handle "eval {} && ...", so here we accept only one ampersand
-    where one_ampersand_only = try$ do s <- op_no_space "&"
-                                       notFollowedBy (char '&')
-                                       return s
+    where one_ampersand_only = notFollowedBy_ (char '&') (op_no_space "&")
 
 var_context :: String -> Perl5Parser [TokenT] -> [String] -> Perl5Parser Node
 var_context s between = var_context_ s (op_no_space s) between

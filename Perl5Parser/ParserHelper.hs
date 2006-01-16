@@ -1,6 +1,6 @@
 module Perl5Parser.ParserHelper
     ( many, many1, eof, (<|>), (<?>), option, try, char, string, digit, pzero
-    , anyChar, oneOf, updateState, satisfy, isAlpha, getState, choice, lookAhead, notFollowedBy
+    , anyChar, oneOf, updateState, satisfy, isAlpha, getState, choice, lookAhead, notFollowedBy_
     -- ^ above are re-exported
     --
     , show4debug_pretty
@@ -20,8 +20,8 @@ module Perl5Parser.ParserHelper
 
 import Data.Char (isAlphaNum, isDigit, isAlpha, isSpace)
 import Text.ParserCombinators.Parsec (oneOf, GenParser, CharParser, (<?>), many, many1,
-      satisfy, space, try, notFollowedBy, choice, (<|>), anyChar, eof, lookAhead,
-      option, getState, updateState, runParser, char, string, digit, getPosition, pzero, newline)
+    , satisfy, space, try, choice, (<|>), anyChar, eof, lookAhead, unexpected
+    , option, getState, updateState, runParser, char, string, digit, getPosition, pzero, newline)
 import Text.ParserCombinators.Parsec.Pos (sourceColumn)
 
 import System.IO.Unsafe (unsafePerformIO)
@@ -66,6 +66,10 @@ lineBegin p = do pos <- getPosition
 toMaybe :: GenParser tok st a -> GenParser tok st (Maybe a)
 toMaybe p = fmap Just p <|> return Nothing
 
+
+notFollowedBy_ :: CharParser st b -> CharParser st a -> CharParser st a
+notFollowedBy_ p q = try $ do r <- q
+                              (p >> unexpected "") <|> return r
 
 -- | must be able to handle BIG strings
 anyTill :: CharParser st String -> CharParser st String
@@ -139,7 +143,7 @@ spaces = manyl space <?> ""
 
 -- | fail if after running p, we are not at the end of a word
 endWord :: CharParser st a -> CharParser st a
-endWord p = try $ do { r <- p; notFollowedBy (satisfy isWordAny); return r }
+endWord = notFollowedBy_ (satisfy isWordAny)
 
 
 word_raw_token = fmap Word word_raw
