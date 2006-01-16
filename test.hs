@@ -82,6 +82,14 @@ ok_exprs = [
            , ("$::'h", "$::'h")
            , ("sub 'h;", "sub 'h;")
            , ("sub ::'h;", "sub ::'h;")
+           -- attributes
+           , ("sub f : foo;", "sub f : foo;")
+           , ("sub f : foo :;", "sub f : foo :;")
+           , ("sub f : foo(a(b)c\\)) bar;", "sub f : foo(a(b)c\\)) bar;")
+           , ("my $f := 1", "(my $f :)= 1")
+           , ("my $f : foo = 1", "(my $f : foo )= 1")
+           , ("my $f : foo : = 1", "(my $f : foo : )= 1")
+           , ("my $f : foo(a(b)c\\)) bar = 1", "(my $f : foo(a(b)c\\)) bar )= 1")
            -- explicit deref
            , ("$a->meth", "$a->meth")
            , ("$a->'meth'", "$a->'meth'")

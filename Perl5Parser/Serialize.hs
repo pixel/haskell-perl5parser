@@ -49,6 +49,8 @@ instance Serialize TokenT where
     verbatim (Symbol s) = s
     verbatim (Operator s) = s
     verbatim (Pod s) = s
+    verbatim (Attribute s Nothing) = s
+    verbatim (Attribute s (Just para)) = s ++ "(" ++ para ++ ")"
 
 --    with_parentheses (Comment _) = ""
 --    with_parentheses e = verbatim e

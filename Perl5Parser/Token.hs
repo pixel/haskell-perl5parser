@@ -2,6 +2,7 @@ module Perl5Parser.Token
     ( p_Token
     , p_Pod
     , p_Label
+    , p_Attributes
     , p_Ident, p_Ident_sure, p_Ident_raw, p_Filetest_raw
     ) where
 
@@ -50,6 +51,19 @@ p_Ident_raw_cont = seQ [ try_string "'", word_raw, option "" p_Ident_raw_cont ]
 p_Filetest_raw = try $ do char '-'
                           c <- endWord (oneOf Perl5Parser.Prototype.filetest_functions)
                           return$ "-" ++ [c]
+
+p_Attributes :: Perl5Parser [TokenT]
+p_Attributes = fmap concat $ many1 $ seQ [ operator ":"
+                                         , manY (pcons attribute spaces_comments)
+                                         ]
+    where attribute = do w <- word_raw
+                         para <- toMaybe parameters
+                         return (Attribute w para)
+          parameters = do char '('
+                          (_, s) <- Perl5Parser.Token.Quote.inside_string '('
+                          return s
+
+
 
 p_Token :: Perl5Parser [TokenT]
 p_Token = do pcons p spaces_comments

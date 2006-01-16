@@ -1,5 +1,5 @@
 module Perl5Parser.Term
-    ( term, func, scalar, after_deref, subattrlist, decl_variable
+    ( term, func, scalar, after_deref, decl_variable
     ) where
 
 import Perl5Parser.Types
@@ -60,9 +60,7 @@ simple_subscript = squareB_option_expr
 
 ----------------------------------------
 decl_variable :: Perl5Parser [Node]
-decl_variable = pcons (decl_grouped <|> var) subattrlist 
-
-subattrlist = toNodes $ manY (seQ [ operator ":", word ])
+decl_variable = pcons (decl_grouped <|> var) (option [] (toNodes Perl5Parser.Token.p_Attributes))
 
 var = star <|> hash <|> scalar <|> array <|> fmap (\e -> Tokens [Word e]) (try_string "undef")
 
