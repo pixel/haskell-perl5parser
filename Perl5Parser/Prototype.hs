@@ -209,7 +209,7 @@ known_builtin_prototypes =
     , ("sprintf", "$@")
     , ("sqrt", ";$")
     , ("srand", ";$")
-    , ("stat", "*")
+    , ("stat", ";$") -- perl says it's "*", WTF??
     , ("substr", "$$;$$")
     , ("symlink", "$$")
     , ("syscall", "$@")
