@@ -144,6 +144,7 @@ ok_exprs = [
            , ("print(cos 1)", "print((cos 1))")
            , ("print sort { $a <=> $b } 1, 5, 2", "print (sort { ($a <=> $b )} ((1, 5), 2))")
            , ("return ($v)[$w]", "return (($v)[$w])")
+           , ("foo.bar", "foo.bar")
            -- complex ?: calls
            , ("($v ? N() . '; ' . N() . ': ' . $w : N())", "($v ? ((((N() ). '; ' ). ((N() ). ': ' )). $w ): (N()))")
            , ("$a = 0 || !1 ? 2 : 3", "$a = ((0 || (!1 ))? 2 : 3)")

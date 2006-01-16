@@ -24,7 +24,7 @@ zeroNumFloat_   =  hexadecimal
 decimalFloat    = seQ [ decimal, option "" fraction_0n, option "" exponent' ]
 
 fraction_0n = seQ [ charl '.', option "" decimal <?> "fraction" ]
-fraction_1n = seQ [ charl '.', endWord decimal <?> "fraction" ]
+fraction_1n = try$ seQ [ charl '.', endWord decimal <?> "fraction" ]
 
 -- | E-1  E22  E+333
 exponent'       = seQ [ oneOfl "eE", sign_, endWord decimal <?> "exponent" ]
