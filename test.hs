@@ -51,6 +51,7 @@ ok_exprs = [
            , ("1 ? f 2, 3 ? 4 : 5 : 6", "1 ? (f (2, (3 ? 4 : 5 ))): 6") -- perl doesn't parse it correctly, should we also fail?
            -- identifiers
            , ("::f 1", "::f 1")
+           , ("::1f 2", "::1f 2")
            , ("$:: = 1", "$:: = 1")
            , ("$a:: = 1", "$a:: = 1")
            , ("$::a = 1", "$::a = 1")
