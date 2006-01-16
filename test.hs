@@ -109,6 +109,10 @@ ok_exprs = [
            , ("$a->{'aa'}", "$a->{('aa')}")
            -- ff {0} and ff [0] are invalid perl, must be disallowed somehow
            --
+           -- pkgs stuff
+           , ("use 0.30", "use 0.30")
+           , ("use foo", "use foo")
+           , ("use foo 0.30()", "use foo 0.30()")
            -- exprs
            , ("(sub { 1 }, 2)", "((sub { 1 }), 2)")
            , ("(sub => 1, 2)", "((sub => 1), 2)")

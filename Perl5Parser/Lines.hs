@@ -135,10 +135,11 @@ infix_cmd_optional = seQ [ choice (map symbol_ infix_cmds) <?> ""
 
 use :: Perl5Parser Node
 use = newNode"use"$ try$ seQ [ symbol_ "use"
-                             , toNodes $ seQ [ toList version_number <|> use_module
-                                             , spaces_comments ]
+                             , toNodes $ version_number <|> use_module
                              , lexpr
                              ]
     where
-      version_number = fmap (Number VersionNumber) Perl5Parser.Token.Number.p_VersionNumber
-      use_module = Perl5Parser.Token.p_Ident
+      version_number = pcons (fmap (Number VersionNumber) Perl5Parser.Token.Number.p_VersionNumber) spaces_comments
+      use_module = seQ [ Perl5Parser.Token.p_Ident
+                       , option [] version_number
+                       ]
