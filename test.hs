@@ -138,6 +138,7 @@ ok_exprs = [
            , ("print(F 1)", "print(F (1))")
            , ("print(F::G 1)", "print(F::G (1))")
            , ("print(cos 1)", "print((cos 1))")
+           , ("print sort { $a <=> $b } 1, 5, 2", "print (sort { ($a <=> $b )} ((1, 5), 2))")
            , ("return ($v)[$w]", "return (($v)[$w])")
            -- complex ?: calls
            , ("($v ? N() . '; ' . N() . ': ' . $w : N())", "($v ? ((((N() ). '; ' ). ((N() ). ': ' )). $w ): (N()))")
