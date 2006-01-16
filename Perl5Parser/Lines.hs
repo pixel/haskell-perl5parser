@@ -54,7 +54,7 @@ scheduled_declaration = newNode"Statement::Scheduled"$ seQ
           ]
 
 anonymous_sub = newNode"anonymous_sub"$ seQ 
-                [ symbol_ "sub"
+                [ notFollowedBy_ (string "=>") (symbol_ "sub")
                 , prototype
                 , subattrlist
                 , block

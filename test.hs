@@ -107,6 +107,9 @@ ok_exprs = [
            , ("$a->{'aa'}", "$a->{('aa')}")
            -- ff {0} and ff [0] are invalid perl, must be disallowed somehow
            --
+           -- exprs
+           , ("(sub { 1 }, 2)", "((sub { 1 }), 2)")
+           , ("(sub => 1, 2)", "((sub => 1), 2)")
            -- regexp
            , ("/\\//", "/\\//")
            , ("$s =~ s {1}   {2}", "$s =~ s {1}   {2}")
