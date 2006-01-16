@@ -63,8 +63,6 @@ anonymous_sub = newNode"anonymous_sub"$ seQ
 prototype = option [] (toNodes $ pcons prototype_ spaces_comments)
     where prototype_ = fmap Prototype $ seQ [ charl '(' , anyTill (charl ')') ]
 
-subattrlist = toNodes $ manY (seQ [ operator ":", word ])
-
 package = newNode"package"$ pcons (symbol_node "package") (toNodes Perl5Parser.Token.p_Ident)
 
 -- | Real conditional expressions

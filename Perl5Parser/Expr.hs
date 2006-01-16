@@ -168,7 +168,7 @@ expr = newNode"expr"$ expr_ >>= reduce
       call_var_decl :: String -> [Node] -> Perl5Parser ZZ
       call_var_decl f e = if f == "my" || f == "our" then call_var_decl_ else pzero
           where call_var_decl_ = do v <- decl_variable
-                                    to_call e prio_named_unary (toZZ [v])
+                                    to_call e prio_named_unary (toZZ v)
 
       call_paren :: [Node] -> Perl5Parser ZZ
       call_paren e = do l <- newNode"paren_option_expr"$ paren_option_expr
