@@ -65,7 +65,8 @@ fmap_maybe _ Nothing = return Nothing
 fmap_maybe f (Just e) = fmap Just (f e)
 
 op = toList . operator_node
-operator' s = if isWordAny (last s) then symbol_node s else try $ operator_node s
+operator' s = if s == "x" then fmap Tokens (pcons (fmap Symbol (string s)) spaces_comments)
+              else if isWordAny (last s) then symbol_node s else try $ operator_node s
 operator_to_parser (i, prio, op) = fmap (\s -> (i, prio, (s,op))) (operator' op)
 
 data ZZ = ZZ { z_op :: NodeName
