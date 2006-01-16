@@ -210,9 +210,9 @@ expr = newNode"expr"$ expr_ >>= reduce
              special_for_slash proto <|> normal_choices proto
           where
 
-            -- | in case a bareword is not known to be a function, we don't allow it to take one of [ /re/, <fh> ] as argument
+            -- | in case a bareword is not known to be a function, we don't allow it to take one of [ /re/, <fh> ] as argument (but still allow <<EOF)
             special_for_slash proto =
-                do if isNothing proto then lookAhead (oneOf ['<', '/']) else pzero
+                do if isNothing proto then lookAhead (char '/' <|> notFollowedBy_ (char '<') (char '<')) else pzero
                    no_para proto
 
             no_para proto = if isNothing proto then return (toZZ e) else to_call_no_para e
