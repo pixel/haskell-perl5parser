@@ -20,8 +20,8 @@ p_Pod :: Perl5Parser [TokenT]
 p_Pod = pcons (fmap Pod p_Pod_raw) spaces_comments
 p_Pod_raw = seQ 
          [ seQ [ lineBegin (charl '='), toList (satisfy isAlpha) ]
-         , anyTill (try_string "\n=cut")
-         , anyTill (charl '\n')
+         , anyTill (try_string "\n=cut" <|> (eof >> return "")) -- ^ allow non closed pods (eg: the buggy ExtUtils/MM_BeOS.pm)
+         , anyTill (charl '\n' <|> (eof >> return ""))
          ]
 
 p_Label :: Perl5Parser [TokenT]
