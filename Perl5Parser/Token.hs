@@ -2,7 +2,7 @@ module Perl5Parser.Token
     ( p_Token
     , p_Pod
     , p_Label
-    , p_Ident, p_Ident_raw, p_Filetest_raw
+    , p_Ident, p_Ident_sure, p_Ident_raw, p_Filetest_raw
     ) where
 
 import Perl5Parser.Types
@@ -31,14 +31,20 @@ p_Label_raw = try$ do s <- word_raw
                       notFollowedBy (char ':') -- for pkg::f()
                       return$ Label s (sp ++ l)
 
--- | :: a ::b  c:: ::d:: e::f
+-- | :: a ::b  c:: ::d:: e::f e'f
 p_Ident :: Perl5Parser [TokenT]
 p_Ident = pcons (fmap Word p_Ident_raw) spaces_comments
 
-p_Ident_raw :: Perl5Parser String
-p_Ident_raw = seQ [ try_string "::", option "" p_Ident_raw ]
-              <|> seQ [ word_raw, option "" p_Ident_raw ]
+-- | same as p_Ident with also 'b (::b)
+p_Ident_sure :: Perl5Parser [TokenT]
+p_Ident_sure = pcons (fmap Word p_Ident_raw_cont) spaces_comments
 
+p_Ident_raw :: Perl5Parser String
+p_Ident_raw = seQ [ try_string "::", option "" p_Ident_raw_cont ]
+              <|> seQ [ word_raw, option "" p_Ident_raw_cont ]
+
+p_Ident_raw_cont = seQ [ try_string "'", word_raw, option "" p_Ident_raw_cont ]
+                   <|> p_Ident_raw
 
 -- | file test functions (eg: -x '/sbin/halt')
 p_Filetest_raw = try $ do char '-'

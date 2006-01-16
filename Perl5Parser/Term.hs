@@ -75,7 +75,7 @@ after_deref :: Perl5Parser [Node]
 after_deref = fmap concat (many1 simple_subscript)
               <|> pcons method (option [] paren_option_expr)
     where method = scalar
-                   <|> fmap Tokens Perl5Parser.Token.p_Ident 
+                   <|> fmap Tokens Perl5Parser.Token.p_Ident
                    <|> fmap Tokens (toList Perl5Parser.Token.Quote.p_Double)
                    <|> fmap Tokens (toList Perl5Parser.Token.Quote.p_Single)
 
@@ -119,7 +119,7 @@ var_context_after :: String -> Perl5Parser [Node]
 var_context_after s = do dollars <- many (op_no_space "$")
                          fmap (\l -> dollars ++ l) after_end <|> catch_magic_PID s dollars
     where after_end = curlyB_option_expr_special
-                      <|> toNodes Perl5Parser.Token.p_Ident 
+                      <|> toNodes Perl5Parser.Token.p_Ident_sure
                       <|> toNodes (pcons (fmap Word $ many1 digit) spaces_comments)
           catch_magic_PID s dollars = 
               if (s == "$" || s == "*") && length dollars > 0 then
