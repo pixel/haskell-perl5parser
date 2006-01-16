@@ -56,6 +56,7 @@ unknown_builtin_prototypes =
     , ("print", "@")
     , ("prototype", "$")
     , ("readpipe", "$")
+    , ("return", "@")
     , ("scalar", "$")
     , ("split", "@")
     , ("sort", "@")
