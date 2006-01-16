@@ -128,6 +128,12 @@ ok_exprs = [
            , ("print F 1", "print F 1")
            , ("print F::G 1", "print F::G 1")
            , ("print cos 1", "print (cos 1)")
+           , ("print($z->zzz)", "print(($z->zzz))")
+           , ("print ($z zzz 1)", "print ($z (zzz 1))")
+           , ("print(F)", "print((F))")
+           , ("print(F 1)", "print(F (1))")
+           , ("print(F::G 1)", "print(F::G (1))")
+           , ("print(cos 1)", "print((cos 1))")
            , ("return ($v)[$w]", "return (($v)[$w])")
            -- complex ?: calls
            , ("($v ? N() . '; ' . N() . ': ' . $w : N())", "($v ? ((((N() ). '; ' ). ((N() ). ': ' )). $w ): (N()))")

@@ -161,7 +161,7 @@ expr = newNode"expr"$ expr_ >>= reduce
       bareword_call = do (f, e, dont_keep_bareword) <- get_bareword
                          if not dont_keep_bareword 
                            then return (toZZ [e]) -- ^ simply return this word (useful for class->new and (xxx => ...)
-                           else call_var_decl f [e] <|> may_call_paren f [e] <|> call_print f e <|> bareword_call_proto f [e]
+                           else call_var_decl f [e] <|> call_print f [e] <|> may_call_paren f [e] <|> bareword_call_proto f [e]
           where may_call_paren f e = if f == "return" then pzero else call_paren e
                 -- ^ allow: return ($v)[$w]
 
@@ -174,21 +174,31 @@ expr = newNode"expr"$ expr_ >>= reduce
       call_paren e = do l <- newNode"paren_option_expr"$ paren_option_expr
                         to_call e prio_max (toZZ [l])
 
-      call_print :: String -> Node -> Perl5Parser ZZ
-      call_print f e = if f == "print" || f == "printf" then call_print_ else pzero
-          where call_print_ =
-                    do z <- lookAhead (bareword_call_proto f [e])
+      call_print :: String -> [Node] -> Perl5Parser ZZ
+      call_print f e = if f == "print" || f == "printf" then call_print_paren <|> call_print_ else pzero
+          where call_print_paren = 
+                    do l <- seQ [ op "(", call_print_paren_get_fh, option_expr, op ")" ]
+                       to_call e prio_max (toZZ l)
+                call_print_paren_get_fh = 
+                    do z <- lookAhead option_expr
+                       has_file_handle' z >>= get_filehandle
+                                      
+                call_print_ =
+                    do z <- lookAhead (bareword_call_proto f e)
                        has <- has_file_handle z
-                       if debug"call_print has_file_handle" has 
-                         then with_filehandle 
-                         else bareword_call_proto f [e]
+                       o_fh <- get_filehandle has
+                       bareword_call_proto f (e ++ o_fh)
 
-                with_filehandle = do t <- fmap Tokens Perl5Parser.Token.p_Ident <|> scalar
-                                     bareword_call_proto f [e, t]
+                get_filehandle True = toNodes Perl5Parser.Token.p_Ident <|> toList scalar
+                get_filehandle False = return []
 
                 has_file_handle (ZZ (NodeName"") Nothing [Call (NodeName"call", Tokens (Word f' : _) : para)] Nothing _ _ _) | f == f' = is_filehandle para
                 has_file_handle (ZZ (NodeName"call") Nothing [Tokens [Word f']] Nothing _ _ _) | f == f' = return False
                 has_file_handle z = show4debug "call_print, weird" z `seq` return False
+
+                has_file_handle' [Node(NodeName"expr", e)] = is_filehandle e
+                has_file_handle' _ = return False
+
                 is_filehandle (Node(NodeName"$", _) : _) = return True
                 is_filehandle (Call (NodeName"<<", (Node(NodeName"$", _) : _)) : _) = return True
                 is_filehandle (Call (NodeName"call", (Tokens(Word s : _) : _)) : _) = fmap isNothing (get_prototype s)
