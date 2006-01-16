@@ -67,12 +67,13 @@ toMaybe :: GenParser tok st a -> GenParser tok st (Maybe a)
 toMaybe p = fmap Just p <|> return Nothing
 
 
+-- | must be able to handle BIG strings
 anyTill :: CharParser st String -> CharParser st String
-anyTill p = scan
+anyTill p = scan ""
     where
-      scan = p
-             <|>
-             do{ x <- anyChar; xs <- scan; return (x:xs) }
+      scan s = fmap (\wanted -> reverse s ++ wanted) p
+               <|>
+               do{ x <- anyChar; scan (x : s) }
 
 
 parse :: CharParser st a -> st -> String -> String -> a
