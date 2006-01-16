@@ -60,7 +60,10 @@ simple_subscript = squareB_option_expr
 
 ----------------------------------------
 decl_variable :: Perl5Parser [Node]
-decl_variable = pcons (decl_grouped <|> var) (option [] (toNodes Perl5Parser.Token.p_Attributes))
+decl_variable = seQ [ option [] (toList word_node)
+                    , toList (decl_grouped <|> var)
+                    , option [] (toNodes Perl5Parser.Token.p_Attributes)
+                    ]
 
 var = star <|> hash <|> scalar <|> array <|> fmap (\e -> Tokens [Word e]) (try_string "undef")
 
