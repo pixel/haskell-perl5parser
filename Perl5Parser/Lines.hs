@@ -28,7 +28,7 @@ line = format
        <|> foreach
        <|> label
        <|> newNode"block" block
-       <|> newNode"pod" (toList $ fmap Tokens Perl5Parser.Token.p_Pod)
+       <|> pod
        <|> semi_colon -- unneeded ";"
 
 format = newNode"format"$ seQ 
@@ -70,12 +70,12 @@ package = newNode"package"$ pcons (symbol_node "package") (toNodes Perl5Parser.T
 if_then = newNode"if_then"$ seQ l
     where l = [ symbol_ "if" <|> symbol_ "unless"
               , paren_expr
-              , block
+              , block_allow_pod
               , option [] (elsif <|> else_)
               ]
 elsif = seQ [ symbol_ "elsif"
             , paren_expr
-            , block
+            , block_allow_pod
             , option [] (elsif <|> else_)
             ]
 else_ = seQ [ symbol_ "else"
@@ -85,13 +85,13 @@ else_ = seQ [ symbol_ "else"
 loop = newNode"loop"$ seQ l
     where l = [ symbol_ "while" <|> symbol_ "until"
               , paren_option_expr
-              , block
+              , block_allow_pod
               , option [] continue_block
               ]
 foreach  = newNode"for"$ seQ l
     where l = [ symbol_ "for" <|> symbol_ "foreach"
               , foreach_novar <|> foreach_var
-              , block
+              , block_allow_pod
               , option [] continue_block
               ]
 foreach_novar = try paren_expr <|> seQ 
@@ -110,9 +110,12 @@ foreach_var = seQ
               , paren_expr
               ]
 
+pod = newNode"pod" (toList $ fmap Tokens Perl5Parser.Token.p_Pod)
+
 block :: Perl5Parser [Node]
 block = seQ [ op "{", lines_, op "}" ]
 continue_block = seQ [ symbol_ "continue", block ]
+block_allow_pod = seQ [ block, many pod ]
 
 var_declarator = any_symbol_node [ "my", "our" ]
 semi_colon = newNode"Token::Structure"$ op ";"
