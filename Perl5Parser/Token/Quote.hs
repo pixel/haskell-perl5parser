@@ -46,8 +46,8 @@ find_next_if_space :: Char -> Perl5Parser ([TokenT], Char)
 find_next_if_space c =
     if isSpace c then 
         do l <- spaces_comments
-           c <- notWord
-           return (l, c)
+           c2 <- notWord
+           return (Whitespace [c] : l, c2)
     else 
         return ([], c)
 
