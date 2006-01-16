@@ -149,7 +149,7 @@ expr = newNode"expr"$ expr_ >>= reduce
       filetest_call = do f <- Perl5Parser.Token.p_Filetest_raw
                          s <- spaces_comments
                          let e = Tokens (Word f : s)
-                         call_paren [e] <|> bareword_call_proto f [e]
+                         bareword_call_proto f [e]
 
       get_bareword = try$ do f <- Perl5Parser.Token.p_Ident_raw
                              s <- spaces_comments

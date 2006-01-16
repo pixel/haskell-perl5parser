@@ -150,6 +150,7 @@ ok_exprs = [
            , ("print sort { $a <=> $b } 1, 5, 2", "print (sort { ($a <=> $b )} ((1, 5), 2))")
            , ("return ($v)[$w]", "return (($v)[$w])")
            , ("return <F>", "return <F>")
+           , ("-x(1)[0]", "-x((1)[0])")
            , ("foo.bar", "foo.bar")
            , ("0 x2", "0 x2")
            -- complex ?: calls
