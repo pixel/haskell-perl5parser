@@ -162,8 +162,9 @@ spaces_comments = do state <- getState
 
 spaces_comments_with_here_doc :: String -> Perl5Parser [TokenT]
 spaces_comments_with_here_doc limit = do l <- fmap(map Whitespace) spaces_no_nl
-                                         l2 <- option [] get_here_doc
-                                         return$ l ++ l2
+                                         l2 <- option [] (toList comment_token)
+                                         l3 <- option [] get_here_doc
+                                         return$ l ++ l2 ++ l3
     where get_here_doc = do lookAhead newline
                             updateState (\s -> s { next_line_is_here_doc = Nothing })
                             here_doc <- anyTill (try_string ("\n" ++ limit ++ "\n"))
