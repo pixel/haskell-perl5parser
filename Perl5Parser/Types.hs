@@ -45,6 +45,7 @@ data QuoteLikeT =
   | Readline
   | Backstick
   | Words LiteralT
+  | Command LiteralT
     deriving Show
 
 type RegexpOptionT = String

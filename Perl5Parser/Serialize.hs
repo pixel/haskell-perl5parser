@@ -64,6 +64,7 @@ to_s_QuoteLike Glob s = "<" ++ s ++ ">"
 to_s_QuoteLike Readline s = "<" ++ s ++ ">"
 to_s_QuoteLike Backstick s = "`" ++ s ++ "`"
 to_s_QuoteLike (Words t) s = "qw" ++ to_s_structure t s
+to_s_QuoteLike (Command t) s = "qx" ++ to_s_structure t s
 
 to_s_Regexp (Match Nothing s opt) = "/" ++ s ++ "/" ++ opt
 to_s_Regexp (Match (Just t) s opt) = "m" ++ to_s_structure t s ++ opt
