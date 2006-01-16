@@ -1,5 +1,5 @@
 module Perl5Parser.Term
-    ( term, func, scalar, after_deref
+    ( term, func, scalar, after_deref, decl_variable
     ) where
 
 import Perl5Parser.Types
@@ -57,6 +57,17 @@ simple_subscript = squareB_option_expr
                    <|> curlyB_option_expr
                    <|> toList grouped
 
+
+----------------------------------------
+decl_variable :: Perl5Parser Node
+decl_variable = decl_grouped <|> var
+
+var = star <|> hash <|> scalar <|> array <|> fmap (\e -> Tokens [Word e]) (try_string "undef")
+
+op = toList . operator_node
+decl_grouped = newNode "grouped"$ seQ [ op "(", list, op ")" ]
+    where list = pcons var (manY (seQ [ op ",", option [] (toList var) ]))          
+
 ----------------------------------------
 after_deref :: Perl5Parser [Node]
 after_deref = fmap concat (many1 simple_subscript)
@@ -70,7 +81,7 @@ after_deref = fmap concat (many1 simple_subscript)
 -- E  =  [@%$&*] space* R <|> $# R
 -- R  =  $* (ident <|> { expr })
 
-op s = try_string s >> return (Tokens [ Operator s ])
+op_no_space s = try_string s >> return (Tokens [ Operator s ])
 
 arraylen = var_context "$#" (return []) []
 scalar   = var_context "$" spaces_comments magic_scalars
@@ -79,12 +90,12 @@ hash     = var_context "%" spaces_comments magic_hashes
 array    = var_context "@" spaces_comments magic_arrays
 func     = var_context_ "&" (try one_ampersand_only) spaces_comments []
     -- | ugly special case to handle "eval {} && ...", so here we accept only one ampersand
-    where one_ampersand_only = try$ do s <- op "&"
+    where one_ampersand_only = try$ do s <- op_no_space "&"
                                        notFollowedBy (char '&')
                                        return s
 
 var_context :: String -> Perl5Parser [TokenT] -> [String] -> Perl5Parser Node
-var_context s between = var_context_ s (op s) between
+var_context s between = var_context_ s (op_no_space s) between
     
 var_context_ :: String -> Perl5Parser Node -> Perl5Parser [TokenT] -> [String] -> Perl5Parser Node
 var_context_ s p between l_magics = 
@@ -103,7 +114,7 @@ var_context_ s p between l_magics =
 
 
 var_context_after :: String -> Perl5Parser [Node]
-var_context_after s = do dollars <- many (op "$")
+var_context_after s = do dollars <- many (op_no_space "$")
                          fmap (\l -> dollars ++ l) after_end <|> catch_magic_PID s dollars
     where after_end = curlyB_option_expr_special
                       <|> toNodes Perl5Parser.Token.p_Ident 

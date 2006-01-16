@@ -143,12 +143,12 @@ expr = newNode"expr"$ expr_ >>= reduce
                             get_middle (add_pre (toZZ_ l) t)
 
       ampersand_call = do f <- func
-                          call_paren f <|> to_call_no_para [f]
+                          call_paren [f] <|> to_call_no_para [f]
 
       filetest_call = do f <- Perl5Parser.Token.p_Filetest_raw
                          s <- spaces_comments
                          let e = Tokens (Word f : s)
-                         call_paren e <|> bareword_call_proto f [e]
+                         call_paren [e] <|> bareword_call_proto f [e]
 
       get_bareword = try$ do f <- Perl5Parser.Token.p_Ident_raw
                              s <- spaces_comments
@@ -159,15 +159,20 @@ expr = newNode"expr"$ expr_ >>= reduce
                                else return (f, e, dont_keep_bareword)
 
       bareword_call = do (f, e, dont_keep_bareword) <- get_bareword
-                         if not dont_keep_bareword 
+                         call_var_decl f [e] <|> if not dont_keep_bareword 
                            then return (toZZ [e]) -- ^ simply return this word (useful for class->new and (xxx => ...)
-                           else may_call_paren f e <|> call_print f e <|> bareword_call_proto f [e]
+                           else may_call_paren f [e] <|> call_print f e <|> bareword_call_proto f [e]
           where may_call_paren f e = if f == "return" then pzero else call_paren e
                 -- ^ allow: return ($v)[$w]
 
-      call_paren :: Node -> Perl5Parser ZZ
-      call_paren f = do l <- newNode"paren_option_expr"$ paren_option_expr
-                        to_call [f] prio_max (toZZ [l])
+      call_var_decl :: String -> [Node] -> Perl5Parser ZZ
+      call_var_decl f e = if f == "my" || f == "our" then call_var_decl_ else pzero
+          where call_var_decl_ = do v <- decl_variable
+                                    to_call e prio_named_unary (toZZ [v])
+
+      call_paren :: [Node] -> Perl5Parser ZZ
+      call_paren e = do l <- newNode"paren_option_expr"$ paren_option_expr
+                        to_call e prio_max (toZZ [l])
 
       call_print :: String -> Node -> Perl5Parser ZZ
       call_print f e = if f == "print" || f == "printf" then call_print_ else pzero
