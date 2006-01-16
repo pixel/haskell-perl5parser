@@ -207,11 +207,11 @@ expr = newNode"expr"$ expr_ >>= reduce
       bareword_call_proto :: String -> [Node] -> Perl5Parser ZZ
       bareword_call_proto f e = 
           do proto <- get_prototype f
-             special_for_slash proto <|> normal_choices proto
+             special_ proto <|> normal_choices proto
           where
 
             -- | in case a bareword is not known to be a function, we don't allow it to take one of [ /re/, <fh> ] as argument (but still allow <<EOF)
-            special_for_slash proto =
+            special_ proto =
                 do if isNothing proto then lookAhead (char '/' <|> notFollowedBy_ (char '<') (char '<')) else pzero
                    no_para proto
 
