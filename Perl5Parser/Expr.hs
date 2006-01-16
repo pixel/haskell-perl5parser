@@ -159,9 +159,9 @@ expr = newNode"expr"$ expr_ >>= reduce
                                else return (f, e, dont_keep_bareword)
 
       bareword_call = do (f, e, dont_keep_bareword) <- get_bareword
-                         call_var_decl f [e] <|> if not dont_keep_bareword 
+                         if not dont_keep_bareword 
                            then return (toZZ [e]) -- ^ simply return this word (useful for class->new and (xxx => ...)
-                           else may_call_paren f [e] <|> call_print f e <|> bareword_call_proto f [e]
+                           else call_var_decl f [e] <|> may_call_paren f [e] <|> call_print f e <|> bareword_call_proto f [e]
           where may_call_paren f e = if f == "return" then pzero else call_paren e
                 -- ^ allow: return ($v)[$w]
 
