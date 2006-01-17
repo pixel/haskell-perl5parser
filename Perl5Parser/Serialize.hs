@@ -49,7 +49,7 @@ instance Serialize TokenT where
     verbatim (SpaceComment l) = verbatim l
     verbatim (PictureFormat s) = s
     verbatim (Prototype s) = s
-    verbatim (Ident l i) = concatMap (\(i,delim) -> i ++ delim) l ++ i
+    verbatim (Ident fq i) = to_s_IdentT fq ++ i
     verbatim (Symbol s) = s
     verbatim (Operator s) = s
     verbatim (Pod s) = s
@@ -58,6 +58,9 @@ instance Serialize TokenT where
 
 --    with_parentheses (Comment _) = ""
 --    with_parentheses e = verbatim e
+
+to_s_IdentT LocalIdent = ""
+to_s_IdentT fq = fq_verbatim fq
 
 to_s_Quote Double s = "\"" ++ s ++ "\""
 to_s_Quote Single s = "'" ++ s ++ "'"

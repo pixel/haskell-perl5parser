@@ -11,7 +11,7 @@ import qualified Perl5Parser.Token.Number
 
 op = toList . operator_node
 
-local_ident s = toList $ fmap Tokens $ pcons (fmap (Ident []) $ endWord (string s)) spaces_comments_token
+local_ident s = toList $ fmap Tokens $ pcons (fmap (Ident LocalIdent) $ endWord (string s)) spaces_comments_token
 symbol_ = toList . symbol_node
 
 -- | A collection of "lines" in the program

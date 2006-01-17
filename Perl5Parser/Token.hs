@@ -6,6 +6,7 @@ module Perl5Parser.Token
     , p_Ident, p_Ident_sure, p_Ident_raw, p_Filetest_raw
     ) where
 
+import Perl5Parser.Common
 import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 import qualified Perl5Parser.Prototype
@@ -32,19 +33,24 @@ p_Label_raw = try$ do s <- word_raw
                       notFollowedBy_ (char ':') (char ':') -- for pkg::f()                      
                       return$ Label s (map Whitespace sp)
 
+to_Ident ([], i) = (LocalIdent, i)
+to_Ident (l, i) = (FqIdent { fq_canonical = pkg, fq_verbatim = raw }, i)
+    where pkg = join_ "::" (map fst l)
+          raw = concat (map (\(i, sep) -> i ++ sep) l)
+
 -- | :: a ::b  c:: ::d:: e::f  e'f  e::'f  e::2
 p_Ident :: Perl5Parser [TokenT]
-p_Ident = pcons (fmap (\(l, i) -> Ident l i) p_Ident_raw) spaces_comments_token
+p_Ident = pcons (fmap (\(pkg, i) -> Ident pkg i) p_Ident_raw) spaces_comments_token
 
 -- | same as p_Ident with also 'b (::b)
 p_Ident_sure :: Perl5Parser [TokenT]
-p_Ident_sure = pcons (fmap (\(l, i) -> Ident l i) p_Ident_raw_sure) spaces_comments_token
+p_Ident_sure = pcons (fmap (\(pkg, i) -> Ident pkg i) p_Ident_raw_sure) spaces_comments_token
 
-p_Ident_raw :: Perl5Parser ([(String, String)], String)
-p_Ident_raw = p_Ident_raw_sep1 "" <|> p_Ident_raw_word word_raw
+p_Ident_raw :: Perl5Parser (IdentT, String)
+p_Ident_raw = fmap to_Ident (p_Ident_raw_sep1 "" <|> p_Ident_raw_word word_raw)
 
-p_Ident_raw_sure :: Perl5Parser ([(String, String)], String)
-p_Ident_raw_sure = p_Ident_raw_seps "" <|> p_Ident_raw_word word_raw
+p_Ident_raw_sure :: Perl5Parser (IdentT, String)
+p_Ident_raw_sure = fmap to_Ident (p_Ident_raw_seps "" <|> p_Ident_raw_word word_raw)
 
 p_Ident_raw_word p = do w <- p
                         p_Ident_raw_sep1 w <|> p_Ident_raw_sep2 w <|> return ([], w)

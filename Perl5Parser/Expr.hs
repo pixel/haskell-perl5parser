@@ -64,7 +64,7 @@ operators =
 fmap_maybe _ Nothing = return Nothing
 fmap_maybe f (Just e) = fmap Just (f e)
 
-elem_local ([], i) l = elem i l
+elem_local (LocalIdent, i) l = elem i l
 elem_local _ _ = False
 
 op = toList . operator_node
@@ -92,10 +92,11 @@ instance Show ZZ where
                     if show_long_ZZ then ", priority = " ++ show prio ++ ", asso = " ++ show asso ++ ", question_opened = " ++ show question_opened ++ "}"
                        else "}"
 
-get_prototype :: ([(String, String)], String) -> Perl5Parser (Maybe String)
-get_prototype ([], f) = do state <- getState
-                           return$ Map.lookup f (prototypes state)
-get_prototype _ = return Nothing
+get_prototype :: (IdentT, String) -> Perl5Parser (Maybe String)
+get_prototype (LocalIdent, f) = do state <- getState
+                                   return$ Map.lookup f (local_prototypes (prototypes state))
+get_prototype (fq, f) = do state <- getState
+                           return$ Map.lookup (fq_canonical fq, f) (per_pkg_prototypes (prototypes state))
 
 preParsers :: [ Perl5Parser (OpType, Integer, (Node, String)) ]
 (preParsers, postParsers) = 
@@ -152,8 +153,8 @@ expr = newNode"expr"$ expr_ >>= reduce
 
       filetest_call = do f <- Perl5Parser.Token.p_Filetest_raw
                          s <- spaces_comments_token
-                         let e = Tokens (Ident [] f : s)
-                         bareword_call_proto ([], f) [e]
+                         let e = Tokens (Ident LocalIdent f : s)
+                         bareword_call_proto (LocalIdent, f) [e]
 
       get_bareword = try$ do f@(l, i) <- Perl5Parser.Token.p_Ident_raw
                              s <- spaces_comments_token
@@ -178,7 +179,7 @@ expr = newNode"expr"$ expr_ >>= reduce
       call_paren e = do l <- newNode"paren_option_expr"$ paren_option_expr
                         to_call e prio_max (toZZ [l])
 
-      call_print f e = if elem_local f ["print", "printf"]
+      call_print f@(_, i) e = if elem_local f ["print", "printf"]
                            then call_print_paren <|> call_print_ 
                            else pzero
           where call_print_paren = 
@@ -197,8 +198,8 @@ expr = newNode"expr"$ expr_ >>= reduce
                 get_filehandle True = toNodes Perl5Parser.Token.p_Ident <|> toList scalar
                 get_filehandle False = return []
 
-                has_file_handle (ZZ (NodeName"") Nothing [Call (NodeName"call", Tokens (Ident [] f' : _) : para)] Nothing _ _ _) | f == ([], f') = is_filehandle para
-                has_file_handle (ZZ (NodeName"call") Nothing [Tokens [Ident [] f']] Nothing _ _ _) | f == ([], f') = return False
+                has_file_handle (ZZ (NodeName"") Nothing [Call (NodeName"call", Tokens (Ident LocalIdent i' : _) : para)] Nothing _ _ _) | i == i' = is_filehandle para
+                has_file_handle (ZZ (NodeName"call") Nothing [Tokens [Ident LocalIdent i']] Nothing _ _ _) | i == i' = return False
                 has_file_handle z = show4debug "call_print, weird" z `seq` return False
 
                 has_file_handle' [Node(NodeName"expr", e)] = is_filehandle e
@@ -209,7 +210,7 @@ expr = newNode"expr"$ expr_ >>= reduce
                 is_filehandle (Call (NodeName"call", (Tokens(Ident l s : _) : _)) : _) = fmap isNothing (get_prototype (l, s))
                 is_filehandle _ = return False
 
-      bareword_call_proto :: ([(String, String)], String) -> [Node] -> Perl5Parser ZZ
+      bareword_call_proto :: (IdentT, String) -> [Node] -> Perl5Parser ZZ
       bareword_call_proto f e = 
           do proto <- get_prototype f
              special_ proto <|> normal_choices proto

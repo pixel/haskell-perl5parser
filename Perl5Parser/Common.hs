@@ -1,12 +1,17 @@
 module Perl5Parser.Common
-    ( show4debug
+    ( join_
     , map_t2, map_non_empty_list
+    , show4debug
     , internal_error
     , isNothing, fromMaybe
     ) where
 
+import List (intersperse)
 import Data.Maybe (fromMaybe, isNothing)
 import System.IO.Unsafe (unsafePerformIO)
+
+join_ :: [a] -> [[a]] -> [a]
+join_ s = concat . intersperse s
 
 map_t2 f (a,b) = (f a, f b)
 

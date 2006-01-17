@@ -1,7 +1,8 @@
 module Perl5Parser.Types
-    ( State(..)
+    ( Prototypes(..), State(..)
     , NodeName(..), SpaceCommentT(..), BalancedOrNot(..), LiteralT, SubstituteT
-    , QuoteT(..), QuoteLikeT(..), RegexpOptionT, RegexpT(..), NumberT(..), SeparatorT(..), TokenT(..), Node(..)
+    , QuoteT(..), QuoteLikeT(..), RegexpOptionT, RegexpT(..), NumberT(..), SeparatorT(..)
+    , IdentT(..), TokenT(..), Node(..)
     , Perl5Parser
     ) where
 
@@ -9,8 +10,13 @@ import qualified Data.Map as Map
 
 import Text.ParserCombinators.Parsec (CharParser)
 
+data Prototypes = Prototypes
+    { local_prototypes :: Map.Map String String
+    , per_pkg_prototypes :: Map.Map (String, String) String
+    }
+
 data State = State 
-    { prototypes :: Map.Map String String
+    { prototypes :: Prototypes
     , next_line_is_here_doc :: Maybe String
     }
 
@@ -71,6 +77,11 @@ data SeparatorT =
   | Separator_End
     deriving Show
 
+data IdentT =
+    LocalIdent
+  | FqIdent { fq_canonical :: String, fq_verbatim :: String }
+    deriving Show
+
 data TokenT =
     Quote QuoteT String
   | QuoteLike QuoteLikeT String
@@ -83,7 +94,7 @@ data TokenT =
   | PictureFormat String
   | Prototype String
   | Symbol String
-  | Ident [(String, String)] String
+  | Ident IdentT String
   | Operator String
   | Pod String
   | Label String [SpaceCommentT]
