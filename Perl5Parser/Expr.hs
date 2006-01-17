@@ -5,7 +5,6 @@ module Perl5Parser.Expr
 
 import List (partition, concatMap, sortBy)
 import Data.Maybe (fromJust)
-import qualified Data.Map as Map
 
 import Perl5Parser.Common
 import Perl5Parser.Types
