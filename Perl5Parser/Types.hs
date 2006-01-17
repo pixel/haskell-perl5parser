@@ -83,6 +83,7 @@ data TokenT =
   | PictureFormat String
   | Prototype String
   | Symbol String
+  | Ident [(String, String)] String
   | Operator String
   | Pod String
   | Label String [SpaceCommentT]

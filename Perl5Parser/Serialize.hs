@@ -49,6 +49,7 @@ instance Serialize TokenT where
     verbatim (SpaceComment l) = verbatim l
     verbatim (PictureFormat s) = s
     verbatim (Prototype s) = s
+    verbatim (Ident l i) = concatMap (\(i,delim) -> i ++ delim) l ++ i
     verbatim (Symbol s) = s
     verbatim (Operator s) = s
     verbatim (Pod s) = s

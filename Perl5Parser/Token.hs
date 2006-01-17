@@ -34,20 +34,30 @@ p_Label_raw = try$ do s <- word_raw
 
 -- | :: a ::b  c:: ::d:: e::f  e'f  e::'f  e::2
 p_Ident :: Perl5Parser [TokenT]
-p_Ident = pcons (fmap Word p_Ident_raw) spaces_comments_token
+p_Ident = pcons (fmap (\(l, i) -> Ident l i) p_Ident_raw) spaces_comments_token
 
 -- | same as p_Ident with also 'b (::b)
 p_Ident_sure :: Perl5Parser [TokenT]
-p_Ident_sure = pcons (fmap Word p_Ident_raw_cont) spaces_comments_token
+p_Ident_sure = pcons (fmap (\(l, i) -> Ident l i) p_Ident_raw_sure) spaces_comments_token
 
-p_Ident_raw :: Perl5Parser String
-p_Ident_raw = seQ [ try_string "::"
-                  , seQ [ Perl5Parser.Token.Number.p_Number, word_raw ] <|> p_Ident_raw_cont <|> return []
-                  ]
-              <|> seQ [ word_raw, option "" p_Ident_raw_cont ]
+p_Ident_raw :: Perl5Parser ([(String, String)], String)
+p_Ident_raw = p_Ident_raw_sep1 "" <|> p_Ident_raw_word word_raw
 
-p_Ident_raw_cont = seQ [ try (seQ [ string "'", word_raw ]), option "" p_Ident_raw_cont ]
-                   <|> p_Ident_raw
+p_Ident_raw_sure :: Perl5Parser ([(String, String)], String)
+p_Ident_raw_sure = p_Ident_raw_seps "" <|> p_Ident_raw_word word_raw
+
+p_Ident_raw_word p = do w <- p
+                        p_Ident_raw_sep1 w <|> p_Ident_raw_sep2 w <|> return ([], w)
+
+p_Ident_raw_seps s = p_Ident_raw_sep1 s <|> p_Ident_raw_sep2 s
+
+p_Ident_raw_sep1 s = do try_string "::" 
+                        (l, i) <- p_Ident_raw_seps "" <|> with_number <|> p_Ident_raw_word word_raw <|> return ([], "")
+                        return ((s, "::") : l, i)
+    where with_number = p_Ident_raw_word (seQ [ Perl5Parser.Token.Number.p_Number, word_raw ])
+
+p_Ident_raw_sep2 s = do (l, i) <- p_Ident_raw_word (try (string "'" >> word_raw))
+                        return ((s, "'") : l, i)
 
 -- | file test functions (eg: -x '/sbin/halt')
 p_Filetest_raw = try $ do char '-'
