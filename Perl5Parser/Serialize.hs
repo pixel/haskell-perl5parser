@@ -32,18 +32,21 @@ instance Serialize Node where
     with_parentheses (Node(_, l)) = with_parentheses l
     with_parentheses (Tokens l) = with_parentheses l
 
+instance Serialize SpaceCommentT where
+    verbatim (Whitespace s) = s
+    verbatim (Comment s) = s
+    verbatim (HereDocValue s) = s
+
 instance Serialize TokenT where
     verbatim (Quote t s) = to_s_Quote t s
     verbatim (QuoteLike t s) = to_s_QuoteLike t s
     verbatim (Regexp t) = to_s_Regexp t
     verbatim (Separator sep l s) = to_s_Separator sep ++ concat l ++ s
     verbatim (HereDoc co name) = "<<" ++ verbatim co ++ verbatim name
-    verbatim (Label label co) = label ++ verbatim co
+    verbatim (Label label co) = label ++ verbatim co ++ ":"
     verbatim (Number _ s) = s
     verbatim (Word s) = s
-    verbatim (Whitespace s) = s
-    verbatim (Comment s) = s
-    verbatim (HereDocValue s) = s
+    verbatim (SpaceComment l) = verbatim l
     verbatim (PictureFormat s) = s
     verbatim (Prototype s) = s
     verbatim (Symbol s) = s

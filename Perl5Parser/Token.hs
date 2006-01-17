@@ -17,7 +17,7 @@ import qualified Perl5Parser.Token.HereDoc
 
 
 p_Pod :: Perl5Parser [TokenT]
-p_Pod = pcons (fmap Pod p_Pod_raw) spaces_comments
+p_Pod = pcons (fmap Pod p_Pod_raw) spaces_comments_token
 p_Pod_raw = seQ 
          [ seQ [ lineBegin (charl '='), toList (satisfy isAlpha) ]
          , anyTill (try_string "\n=cut" <|> (eof >> return "")) -- ^ allow non closed pods (eg: the buggy ExtUtils/MM_BeOS.pm)
@@ -25,20 +25,20 @@ p_Pod_raw = seQ
          ]
 
 p_Label :: Perl5Parser [TokenT]
-p_Label = pcons p_Label_raw spaces_comments
+p_Label = pcons p_Label_raw spaces_comments_token
 p_Label_raw = try$ do s <- word_raw
                       if s == "s" then pzero else return []
-                      sp <- fmap (map Whitespace) spaces_no_nl
-                      l <- notFollowedBy_ (char ':') (operator ":") -- for pkg::f()                      
-                      return$ Label s (sp ++ l)
+                      sp <- spaces_no_nl
+                      notFollowedBy_ (char ':') (char ':') -- for pkg::f()                      
+                      return$ Label s (map Whitespace sp)
 
 -- | :: a ::b  c:: ::d:: e::f  e'f  e::'f  e::2
 p_Ident :: Perl5Parser [TokenT]
-p_Ident = pcons (fmap Word p_Ident_raw) spaces_comments
+p_Ident = pcons (fmap Word p_Ident_raw) spaces_comments_token
 
 -- | same as p_Ident with also 'b (::b)
 p_Ident_sure :: Perl5Parser [TokenT]
-p_Ident_sure = pcons (fmap Word p_Ident_raw_cont) spaces_comments
+p_Ident_sure = pcons (fmap Word p_Ident_raw_cont) spaces_comments_token
 
 p_Ident_raw :: Perl5Parser String
 p_Ident_raw = seQ [ try_string "::"
@@ -56,7 +56,7 @@ p_Filetest_raw = try $ do char '-'
 
 p_Attributes :: Perl5Parser [TokenT]
 p_Attributes = fmap concat $ many1 $ seQ [ operator ":"
-                                         , manY (pcons attribute spaces_comments)
+                                         , manY (pcons attribute spaces_comments_token)
                                          ]
     where attribute = do w <- word_raw
                          para <- toMaybe parameters
@@ -68,7 +68,7 @@ p_Attributes = fmap concat $ many1 $ seQ [ operator ":"
 
 
 p_Token :: Perl5Parser [TokenT]
-p_Token = do pcons p spaces_comments
+p_Token = do pcons p spaces_comments_token
     where p = 
                   fmap to_Quote Perl5Parser.Token.Quote.p_Interpolate
               <|> fmap to_Quote Perl5Parser.Token.Quote.p_Literal

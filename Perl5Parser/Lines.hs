@@ -36,7 +36,7 @@ format = newNode"format"$ seQ
          , toNodes word
          , op "="
          , toNodes $ pcons (fmap PictureFormat $ anyTill (try_string "\n.\n"))
-                           spaces_comments
+                           spaces_comments_token
          ]
 
 sub_declaration	= newNode"Statement::Sub"$ seQ
@@ -60,7 +60,7 @@ anonymous_sub = newNode"anonymous_sub"$ seQ
                 , block
                 ]
 
-prototype = option [] (toNodes $ pcons prototype_ spaces_comments)
+prototype = option [] (toNodes $ pcons prototype_ spaces_comments_token)
     where prototype_ = fmap Prototype $ seQ [ charl '(' , anyTill (charl ')') ]
 
 subattrlist = option [] (toNodes Perl5Parser.Token.p_Attributes)
@@ -139,7 +139,7 @@ use = newNode"use"$ try$ seQ [ symbol_ "use"
                              , lexpr
                              ]
     where
-      version_number = pcons (fmap (Number VersionNumber) Perl5Parser.Token.Number.p_VersionNumber) spaces_comments
+      version_number = pcons (fmap (Number VersionNumber) Perl5Parser.Token.Number.p_VersionNumber) spaces_comments_token
       use_module = seQ [ Perl5Parser.Token.p_Ident
                        , option [] version_number
                        ]

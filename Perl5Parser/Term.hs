@@ -2,6 +2,7 @@ module Perl5Parser.Term
     ( term, func, scalar, after_deref, decl_variable
     ) where
 
+import Perl5Parser.Common
 import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 import qualified Perl5Parser.Token
@@ -95,18 +96,18 @@ func     = var_context_ "&" (try one_ampersand_only) spaces_comments []
     -- | ugly special case to handle "eval {} && ...", so here we accept only one ampersand
     where one_ampersand_only = notFollowedBy_ (char '&') (op_no_space "&")
 
-var_context :: String -> Perl5Parser [TokenT] -> [String] -> Perl5Parser Node
+var_context :: String -> Perl5Parser [SpaceCommentT] -> [String] -> Perl5Parser Node
 var_context s between = var_context_ s (op_no_space s) between
     
-var_context_ :: String -> Perl5Parser Node -> Perl5Parser [TokenT] -> [String] -> Perl5Parser Node
+var_context_ :: String -> Perl5Parser Node -> Perl5Parser [SpaceCommentT] -> [String] -> Perl5Parser Node
 var_context_ s p between l_magics = 
     do pval <- p
        bval <- between
        l <- var_context_after s <|> if has_comment bval then pzero else magics
-       newNode s $ return (pval : Tokens bval : l) -- ^ do magics after var_context_after to handle $:: vs $:
+       newNode s $ return (pval : map_non_empty_list (\c -> Tokens [ SpaceComment c ]) bval ++ l) -- ^ do magics after var_context_after to handle $:: vs $:
     where
       magics = do magic <- choice (map try_string l_magics)
-                  l <- spaces_comments
+                  l <- spaces_comments_token
                   return [Tokens $ Word magic : l]
 
       has_comment = any is_comment
@@ -119,10 +120,10 @@ var_context_after s = do dollars <- many (op_no_space "$")
                          fmap (\l -> dollars ++ l) after_end <|> catch_magic_PID s dollars
     where after_end = curlyB_option_expr_special
                       <|> toNodes Perl5Parser.Token.p_Ident_sure
-                      <|> toNodes (pcons (fmap Word $ many1 digit) spaces_comments)
+                      <|> toNodes (pcons (fmap Word $ many1 digit) spaces_comments_token)
           catch_magic_PID s dollars = 
               if (s == "$" || s == "*") && length dollars > 0 then
-                  do sp <- spaces_comments
+                  do sp <- spaces_comments_token
                      return$ tail dollars ++ [Tokens (Word "$" : sp)]
               else pzero
 

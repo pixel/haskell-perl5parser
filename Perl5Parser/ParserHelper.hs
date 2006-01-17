@@ -4,14 +4,14 @@ module Perl5Parser.ParserHelper
     -- ^ above are re-exported
     --
     , show4debug_pretty
-    , toList, pcons, seQ, manY, manyl, fold_many, lineBegin, toMaybe
+    , toList, onList, pcons, seQ, manY, manyl, fold_many, lineBegin, toMaybe
     , anyTill, parse
     , isWordAny, isDigit_, isAlpha_, isSpace, balancedDelim, infix_cmds, keywords
     , charl, oneOfl, try_string
     , notWord, wordAny, digit_
     , word_raw, comment, spaces_no_nl, spaces, spaces_comments_normal, endWord
     --
-    , spaces_token, word_raw_token, spaces_comments, spaces_comments_with_here_doc
+    , spaces_token, word_raw_token, spaces_comments, spaces_comments_token, spaces_comments_with_here_doc
     , word, symbol, any_symbol, operator
     --
     , operator_node, symbol_node, any_symbol_node, word_node, newNode
@@ -40,6 +40,9 @@ show4debug_pretty s e = seq (unsafePerformIO $ putStrLn (s ++ ": " ++ Perl5Parse
 toList :: GenParser tok st a -> GenParser tok st [a]
 toList = fmap (\c -> [c])
 
+onList :: ([a] -> b) -> GenParser tok st [a] -> GenParser tok st [b]
+onList f = fmap (map_non_empty_list f)
+
 pcons :: GenParser tok st a -> GenParser tok st [a] -> GenParser tok st [a]
 pcons li lis = do l <- li
                   ls <- lis
@@ -53,7 +56,7 @@ manY = fmap concat . many
 --manY1 = fmap concat . many1
 
 manyl :: Eq a => GenParser tok st a -> GenParser tok st [[a]]
-manyl = fmap (\c -> if c == [] then [] else [c]) . many
+manyl = onList id . many
 
 fold_many :: (a -> GenParser tok st a) -> a -> GenParser tok st a
 fold_many p accu = option accu (p accu >>= fold_many p)
@@ -150,17 +153,20 @@ word_raw_token = fmap Word word_raw
 spaces_token = fmap (map Whitespace) spaces
 comment_token = fmap Comment comment
 
-spaces_comments_normal :: CharParser st [TokenT]
+spaces_comments_normal :: CharParser st [SpaceCommentT]
 spaces_comments_normal = seQ [ spaces_token, manY $ seQ [ toList comment_token, spaces_token ] ]
 
 
-spaces_comments :: Perl5Parser [TokenT]
+spaces_comments :: Perl5Parser [SpaceCommentT]
 spaces_comments = do state <- getState
                      case next_line_is_here_doc state of
                        Nothing -> spaces_comments_normal
                        Just limit -> spaces_comments_with_here_doc limit
 
-spaces_comments_with_here_doc :: String -> Perl5Parser [TokenT]
+spaces_comments_token :: Perl5Parser [TokenT]
+spaces_comments_token = onList SpaceComment spaces_comments
+
+spaces_comments_with_here_doc :: String -> Perl5Parser [SpaceCommentT]
 spaces_comments_with_here_doc limit = do l <- fmap(map Whitespace) spaces_no_nl
                                          l2 <- option [] (toList comment_token)
                                          l3 <- option [] get_here_doc
@@ -173,16 +179,16 @@ spaces_comments_with_here_doc limit = do l <- fmap(map Whitespace) spaces_no_nl
 
                          
 word :: Perl5Parser [TokenT]
-word = pcons word_raw_token spaces_comments
+word = pcons word_raw_token spaces_comments_token
 
 symbol :: String -> Perl5Parser [TokenT]
-symbol s = pcons (fmap Symbol $ endWord (string s)) spaces_comments
+symbol s = pcons (fmap Symbol $ endWord (string s)) spaces_comments_token
 
 any_symbol :: [String] -> Perl5Parser [TokenT]
 any_symbol = choice . map symbol
 
 operator :: String -> Perl5Parser [TokenT]
-operator s = pcons (fmap Operator $ try_string s) spaces_comments
+operator s = pcons (fmap Operator $ try_string s) spaces_comments_token
 
 
 --

@@ -1,6 +1,6 @@
 module Perl5Parser.Types
     ( State(..)
-    , NodeName(..), CommentO, BalancedOrNot(..), LiteralT, SubstituteT
+    , NodeName(..), SpaceCommentT(..), BalancedOrNot(..), LiteralT, SubstituteT
     , QuoteT(..), QuoteLikeT(..), RegexpOptionT, RegexpT(..), NumberT(..), SeparatorT(..), TokenT(..), Node(..)
     , Perl5Parser
     ) where
@@ -22,7 +22,11 @@ newtype NodeName = NodeName String deriving Eq
 instance Show NodeName where
     show (NodeName s) = s
 
-type CommentO = Maybe String
+data SpaceCommentT = 
+    Whitespace String
+  | Comment String
+  | HereDocValue String
+    deriving Show
 
 data BalancedOrNot a = 
     NonBalanced Char
@@ -30,8 +34,8 @@ data BalancedOrNot a =
     deriving Show
 
 -- | [TokenT] is the optional comment
-type LiteralT = ([TokenT], BalancedOrNot Char)
-type SubstituteT = ([TokenT], BalancedOrNot (Char, LiteralT))
+type LiteralT = ([SpaceCommentT], BalancedOrNot Char)
+type SubstituteT = ([SpaceCommentT], BalancedOrNot (Char, LiteralT))
 
 data QuoteT =
     Double
@@ -73,17 +77,15 @@ data TokenT =
   | Regexp RegexpT
   | Number NumberT String
   | Word String
-  | Whitespace String
-  | Comment String
+  | SpaceComment [SpaceCommentT]
   | Separator SeparatorT [String] String
-  | HereDoc [TokenT] TokenT
-  | HereDocValue String
+  | HereDoc [SpaceCommentT] TokenT
   | PictureFormat String
   | Prototype String
   | Symbol String
   | Operator String
   | Pod String
-  | Label String [TokenT]
+  | Label String [SpaceCommentT]
   | Attribute String (Maybe String)
     deriving Show
 

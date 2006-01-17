@@ -42,7 +42,7 @@ user_delimited_string :: String -> Perl5Parser (LiteralT, String)
 user_delimited_string s = user_delimited_string_p$ try (string s >> notWord)
 
 
-find_next_if_space :: Char -> Perl5Parser ([TokenT], Char)
+find_next_if_space :: Char -> Perl5Parser ([SpaceCommentT], Char)
 find_next_if_space c =
     if isSpace c then 
         do l <- spaces_comments

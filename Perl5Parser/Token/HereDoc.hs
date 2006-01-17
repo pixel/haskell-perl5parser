@@ -15,7 +15,7 @@ p_HereDoc = do try_string "<<"
                updateState (\state -> state { next_line_is_here_doc = Just s })
                return$ HereDoc space tok
 
-here_doc_next :: Perl5Parser ([TokenT], TokenT, String)
+here_doc_next :: Perl5Parser ([SpaceCommentT], TokenT, String)
 here_doc_next = do s <- many1 wordAny  -- ^ and not word_raw because <<1 is allowed
                    return ([], Word s, s)
             <|> do l <- spaces_token

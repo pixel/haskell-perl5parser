@@ -65,7 +65,7 @@ fmap_maybe _ Nothing = return Nothing
 fmap_maybe f (Just e) = fmap Just (f e)
 
 op = toList . operator_node
-operator' s = if s == "x" then fmap Tokens (pcons (fmap Symbol (string s)) spaces_comments)
+operator' s = if s == "x" then fmap Tokens (pcons (fmap Symbol (string s)) spaces_comments_token)
               else if isWordAny (last s) then symbol_node s else try $ operator_node s
 operator_to_parser (i, prio, op) = fmap (\s -> (i, prio, (s,op))) (operator' op)
 
@@ -147,12 +147,12 @@ expr = newNode"expr"$ expr_ >>= reduce
                           call_paren [f] <|> to_call_no_para [f]
 
       filetest_call = do f <- Perl5Parser.Token.p_Filetest_raw
-                         s <- spaces_comments
+                         s <- spaces_comments_token
                          let e = Tokens (Word f : s)
                          bareword_call_proto f [e]
 
       get_bareword = try$ do f <- Perl5Parser.Token.p_Ident_raw
-                             s <- spaces_comments
+                             s <- spaces_comments_token
                              let e = Tokens (Word f : s)
                              dont_keep_bareword <- fmap isNothing $ toMaybe $ lookAhead (try_string "->" <|> try_string "=>")
                              if dont_keep_bareword && elem f keywords 
