@@ -11,6 +11,7 @@ import qualified Perl5Parser.Token.Number
 
 op = toList . operator_node
 
+local_ident s = toList $ fmap Tokens $ pcons (fmap (Ident []) $ endWord (string s)) spaces_comments_token
 symbol_ = toList . symbol_node
 
 -- | A collection of "lines" in the program
@@ -32,7 +33,7 @@ line = format
        <|> semi_colon -- unneeded ";"
 
 format = newNode"format"$ seQ 
-         [ symbol_ "format"
+         [ local_ident "format"
          , toNodes word
          , op "="
          , toNodes $ pcons (fmap PictureFormat $ anyTill (try_string "\n.\n"))
@@ -47,7 +48,7 @@ sub_declaration	= newNode"Statement::Sub"$ seQ
           ]
 
 scheduled_declaration = newNode"Statement::Scheduled"$ seQ
-          [ choice $ map symbol_ [ "BEGIN", "CHECK", "INIT", "END", "AUTOLOAD" ] -- ^ cf AutoLoader.pm for such an AUTOLOAD example
+          [ choice $ map local_ident [ "BEGIN", "CHECK", "INIT", "END", "AUTOLOAD" ] -- ^ cf AutoLoader.pm for such an AUTOLOAD example
           , prototype
           , subattrlist
           , block <|> op ";"
