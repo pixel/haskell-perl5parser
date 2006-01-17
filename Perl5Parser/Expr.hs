@@ -92,12 +92,6 @@ instance Show ZZ where
                     if show_long_ZZ then ", priority = " ++ show prio ++ ", asso = " ++ show asso ++ ", question_opened = " ++ show question_opened ++ "}"
                        else "}"
 
-get_prototype :: (IdentT, String) -> Perl5Parser (Maybe String)
-get_prototype (LocalIdent, f) = do state <- getState
-                                   return$ Map.lookup f (local_prototypes (prototypes state))
-get_prototype (fq, f) = do state <- getState
-                           return$ Map.lookup (fq_canonical fq, f) (per_pkg_prototypes (prototypes state))
-
 preParsers :: [ Perl5Parser (OpType, Integer, (Node, String)) ]
 (preParsers, postParsers) = 
     map_t2 (map operator_to_parser) $ partition (\(i, _, _) -> i == Prefix) $ long_first $ flatten operators

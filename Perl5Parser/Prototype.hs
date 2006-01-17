@@ -1,13 +1,22 @@
 module Perl5Parser.Prototype
     ( parse_prototype
+    , get_prototype
     , builtin_prototypes
     , filetest_functions
     ) where
 
+import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 import List (intersect)
 
 import qualified Data.Map as Map
+
+
+get_prototype :: (IdentT, String) -> Perl5Parser (Maybe String)
+get_prototype (LocalIdent, f) = do state <- getState
+                                   return$ Map.lookup f (local_prototypes (prototypes state))
+get_prototype (fq, f) = do state <- getState
+                           return$ Map.lookup (fq_canonical fq, f) (per_pkg_prototypes (prototypes state))
 
 
 parse_prototype :: String -> Maybe (Int, Int)
