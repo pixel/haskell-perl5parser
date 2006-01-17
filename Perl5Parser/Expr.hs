@@ -269,7 +269,7 @@ expr = newNode"expr"$ expr_ >>= reduce
           case z_left assign of
             Just question@(ZZ (NodeName "?") _ _ _ _ _ _) -> 
                 do assign' <- reduce (assign { z_left = z_right question })
-                   return $ show4debug "reduce_assign_for_ternary" $ question { z_right = Just (toZZ assign') }
+                   return $ debug "reduce_assign_for_ternary" $ question { z_right = Just (toZZ assign') }
             _ -> return assign
       reduce_assign_for_ternary e | z_priority e == prio_normal_call =
           do right' <- fmap_maybe reduce_assign_for_ternary (z_right e)

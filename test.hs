@@ -1,5 +1,5 @@
 import System (getArgs)
---import Perl5Parser.Types
+import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 import Perl5Parser.Document
 import Perl5Parser.Serialize
@@ -170,12 +170,21 @@ test_exprs = concat $ map test ok_exprs
               let s_prio = with_parentheses ast in
               must_be_same input s' ++ must_be_same wanted s_prio
 
+fake_eval (Node(_, _)) = ""
+fake_eval (Call(_, _)) = ""
+fake_eval (Tokens _) = ""
+
+
 test :: String -> IO ()
 test test_file =
     do s <- readFile test_file
        let ast = parse prog initial_state test_file s
-       writeFile (test_file ++ ".new") (verbatim ast)
+       putStr (fake_eval ast)
        putStrLn (with_parentheses ast) >> print ast
+       if verbatim ast /= s 
+         then do writeFile ("/tmp/t.new") (verbatim ast)
+                 error ("verbatim writing fails: /tmp/t.new and " ++ test_file ++ " differ")
+         else return ()
 
 
 main = 
