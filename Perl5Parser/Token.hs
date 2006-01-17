@@ -3,7 +3,7 @@ module Perl5Parser.Token
     , p_Pod
     , p_Label
     , p_Attributes
-    , p_Ident, p_Ident_sure, p_Ident_raw, p_Filetest_raw
+    , p_Ident, p_Ident_sure, p_Ident_raw, p_Ident_sure_raw, p_Filetest_raw
     ) where
 
 import Perl5Parser.Common
@@ -44,13 +44,13 @@ p_Ident = pcons (fmap (\(pkg, i) -> Ident pkg i) p_Ident_raw) spaces_comments_to
 
 -- | same as p_Ident with also 'b (::b)
 p_Ident_sure :: Perl5Parser [TokenT]
-p_Ident_sure = pcons (fmap (\(pkg, i) -> Ident pkg i) p_Ident_raw_sure) spaces_comments_token
+p_Ident_sure = pcons (fmap (\(pkg, i) -> Ident pkg i) p_Ident_sure_raw) spaces_comments_token
 
 p_Ident_raw :: Perl5Parser (IdentT, String)
 p_Ident_raw = fmap to_Ident (p_Ident_raw_sep1 "" <|> p_Ident_raw_word word_raw)
 
-p_Ident_raw_sure :: Perl5Parser (IdentT, String)
-p_Ident_raw_sure = fmap to_Ident (p_Ident_raw_seps "" <|> p_Ident_raw_word word_raw)
+p_Ident_sure_raw :: Perl5Parser (IdentT, String)
+p_Ident_sure_raw = fmap to_Ident (p_Ident_raw_seps "" <|> p_Ident_raw_word word_raw)
 
 p_Ident_raw_word p = do w <- p
                         p_Ident_raw_sep1 w <|> p_Ident_raw_sep2 w <|> return ([], w)

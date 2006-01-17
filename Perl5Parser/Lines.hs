@@ -6,6 +6,7 @@ import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 import Perl5Parser.Term
 import Perl5Parser.Expr
+import Perl5Parser.Prototype
 import qualified Perl5Parser.Token
 import qualified Perl5Parser.Token.Number
 
@@ -40,29 +41,42 @@ format = newNode"format"$ seQ
                            spaces_comments_token
          ]
 
-sub_declaration	= newNode"Statement::Sub"$ seQ
-          [ try$ seQ [ symbol_ "sub", toNodes$ Perl5Parser.Token.p_Ident_sure ] -- ^ try needed for anonymous_sub
-          , prototype
-          , subattrlist
-          , block <|> op ";"
-          ]
+sub_declaration	= newNode"Statement::Sub" p
+    where p = do (ident, l1) <- try sub_xxx -- ^ try needed for anonymous_sub
+                 (proto, l2) <- option_prototype
+                 case proto of
+                   Nothing -> return ()
+                   Just proto -> set_prototype ident proto
+                 l3 <- subattrlist
+                 l4 <- block <|> op ";"
+                 return (l1 ++ l2 ++ l3 ++ l4)
+          sub_xxx = do l1 <- symbol_ "sub"
+                       (fq, i) <- Perl5Parser.Token.p_Ident_sure_raw
+                       l2 <- spaces_comments_token
+                       return ((fq, i), l1 ++ [Tokens (Ident fq i : l2)])
+
 
 scheduled_declaration = newNode"Statement::Scheduled"$ seQ
           [ choice $ map local_ident [ "BEGIN", "CHECK", "INIT", "END", "AUTOLOAD" ] -- ^ cf AutoLoader.pm for such an AUTOLOAD example
-          , prototype
+          , fmap snd option_prototype
           , subattrlist
           , block <|> op ";"
           ]
 
 anonymous_sub = newNode"anonymous_sub"$ seQ 
                 [ notFollowedBy_ (string "=>") (symbol_ "sub")
-                , prototype
+                , fmap snd option_prototype
                 , subattrlist
                 , block
                 ]
 
-prototype = option [] (toNodes $ pcons prototype_ spaces_comments_token)
-    where prototype_ = fmap Prototype $ seQ [ charl '(' , anyTill (charl ')') ]
+option_prototype = option (Nothing, []) prototype
+prototype :: Perl5Parser (Maybe String, [Node])
+prototype = do char '('
+               proto <- many (satisfy (/= ')'))
+               char ')'
+               l <- spaces_comments_token
+               return (Just proto, [Tokens (Prototype proto : l)])
 
 subattrlist = option [] (toNodes Perl5Parser.Token.p_Attributes)
 package = newNode"package"$ pcons (symbol_node "package") (toNodes Perl5Parser.Token.p_Ident)

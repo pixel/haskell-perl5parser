@@ -48,7 +48,7 @@ instance Serialize TokenT where
     verbatim (Word s) = s
     verbatim (SpaceComment l) = verbatim l
     verbatim (PictureFormat s) = s
-    verbatim (Prototype s) = s
+    verbatim (Prototype s) = "(" ++ s ++ ")"
     verbatim (Ident fq i) = to_s_IdentT fq ++ i
     verbatim (Symbol s) = s
     verbatim (Operator s) = s

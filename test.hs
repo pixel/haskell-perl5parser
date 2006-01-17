@@ -123,9 +123,14 @@ ok_exprs = [
            , ("/\\//", "/\\//")
            , ("$s =~ s {1}   {2}", "$s =~ s {1}   {2}")
            , ("s:^f::", "s:^f::")
+           -- various
+           , ("foo: 1", "foo: 1")
            , ("`foo`", "`foo`")
            , ("our $z = 1", "(our $z )= 1")
            , ("our $z : unique = 1", "(our $z : unique )= 1")
+           , ("f + 2, 3; sub f () {}  f + 2, 3", "f ((+ 2), 3); sub f () {}  ((f )+ 2), 3")
+           , ("f + 2, 3; sub f ($) {}  f + 2, 3", "f ((+ 2), 3); sub f ($) {}  (f (+ 2)), 3")
+           , ("sub ff($\\@%) {}", "sub ff($\\@%) {}")
            -- weird function calls or keyword disambiguation
            , ("map {1}&a", "map {(1)}((&a))")
            , ("eval {1}&a", "(eval {(1)})&a")
