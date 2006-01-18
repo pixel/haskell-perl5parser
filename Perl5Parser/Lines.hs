@@ -79,7 +79,14 @@ prototype = do char '('
                return (Just proto, [Tokens (Prototype proto : l)])
 
 subattrlist = option [] (toNodes Perl5Parser.Token.p_Attributes)
-package = newNode"package"$ pcons (symbol_node "package") (toNodes Perl5Parser.Token.p_Ident)
+
+package = newNode"package"$ p
+    where p = do l1 <- symbol_node "package"
+                 (fq, i) <- Perl5Parser.Token.p_Ident_raw
+                 let pkg = case fq of LocalIdent -> i ; _ -> fq_canonical fq ++ "::" ++ i
+                 Env.set_package pkg
+                 l2 <- spaces_comments_token
+                 return$ l1 : [Tokens $ Word pkg : l2]
 
 -- | Real conditional expressions
 if_then = newNode"if_then"$ seQ l
