@@ -5,24 +5,27 @@ module Perl5Parser.Env
     , set_package
     ) where
 
+import qualified Monad
 import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 
 import qualified Data.Map as Map
 
 
+fq2pkg LocalIdent = getState >>= (return . current_package . env_lexical . env)
+fq2pkg fq = return (fq_canonical fq)
+
 get_prototype :: (IdentT, String) -> Perl5Parser (Maybe String)
 get_prototype (LocalIdent, f) = do state <- getState
-                                   return$ Map.lookup f (local_prototypes (prototypes state))
+                                   let pkg = current_package (env_lexical (env state))
+                                   return$ Monad.mplus (Map.lookup (pkg, f) (prototypes state)) (Map.lookup ("CORE", f) (prototypes state))
 get_prototype (fq, f) = do state <- getState
-                           return$ Map.lookup (fq_canonical fq, f) (per_pkg_prototypes (prototypes state))
+                           return$ Map.lookup (fq_canonical fq, f) (prototypes state)
 
 set_prototype :: (IdentT, String) -> String -> Perl5Parser ()
-set_prototype (LocalIdent, f) proto = update_Prototypes update
-    where update protos = protos { local_prototypes = Map.insert f proto (local_prototypes protos) }
-set_prototype (fq, f) proto = update_Prototypes update
-    where update protos = protos { per_pkg_prototypes = Map.insert (fq_canonical fq, f) proto (per_pkg_prototypes protos) }
-
+set_prototype (fq, f) proto = 
+    do pkg <- fq2pkg fq
+       update_Prototypes (Map.insert (pkg, f) proto)
 
 update_Prototypes :: (Prototypes -> Prototypes) -> Perl5Parser ()
 update_Prototypes f = updateState (\state -> state { prototypes = f (prototypes state) })

@@ -1,5 +1,5 @@
 module Perl5Parser.Types
-    ( Env_lexical(..), Env(..), Prototypes(..), State(..)
+    ( Env_lexical(..), Env(..), Prototypes, State(..)
     , NodeName(..), SpaceCommentT(..), BalancedOrNot(..), LiteralT, SubstituteT
     , QuoteT(..), QuoteLikeT(..), RegexpOptionT, RegexpT(..), NumberT(..), SeparatorT(..)
     , IdentT(..), TokenT(..), Node(..)
@@ -10,11 +10,6 @@ import qualified Data.Map as Map
 
 import Text.ParserCombinators.Parsec (CharParser)
 
-data Prototypes = Prototypes
-    { local_prototypes :: Map.Map String String
-    , per_pkg_prototypes :: Map.Map (String, String) String
-    }
-
 data Env_lexical = Env_lexical
     { current_package :: String     
     }
@@ -22,6 +17,8 @@ data Env_lexical = Env_lexical
 data Env = Env 
     { env_lexical :: Env_lexical
     }
+
+type Prototypes = Map.Map (String, String) String
 
 data State = State 
     { prototypes :: Prototypes

@@ -10,9 +10,7 @@ import Perl5Parser.Lines
 import qualified Data.Map as Map
 
 initial_state = State { prototypes = initial_prototypes, env = initial_env, next_line_is_here_doc = Nothing }
-    where initial_prototypes = Prototypes { local_prototypes = Map.fromList Perl5Parser.Prototype.builtin_prototypes
-                                          , per_pkg_prototypes = Map.empty
-                                          }
+    where initial_prototypes = Map.fromList $ map (\(f, proto) -> (("CORE", f), proto)) Perl5Parser.Prototype.builtin_prototypes
           initial_env = Env { env_lexical = Env_lexical { current_package = "main" } }
 
 
