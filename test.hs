@@ -25,7 +25,7 @@ test_tokens =
          parse_and_verif s = must_be_same s s'
              where
                s' = verbatim $ parse parser' initial_state s s
-               parser' = manY $ Perl5Parser.Token.p_Token
+               parser' = many $ fmap Token Perl5Parser.Token.p_Token
 --------------------------------------------------------------------------------
 ok_exprs = [ 
            -- operator priorities
@@ -177,7 +177,7 @@ test_exprs = concat $ map test ok_exprs
 
 fake_eval (Node(_, _)) = ""
 fake_eval (Call(_, _)) = ""
-fake_eval (Tokens _) = ""
+fake_eval (Token _) = ""
 
 
 test :: String -> IO ()

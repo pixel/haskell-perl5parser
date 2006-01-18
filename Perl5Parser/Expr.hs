@@ -68,7 +68,7 @@ elem_local (LocalIdent, i) l = elem i l
 elem_local _ _ = False
 
 op = toList . operator_node
-operator' s = if s == "x" then fmap Tokens (pcons (fmap Symbol (string s)) spaces_comments_token)
+operator' s = if s == "x" then fmap Token (with_spaces_comments (fmap Symbol$ string s))
               else if isWordAny (last s) then symbol_node s else try $ operator_node s
 operator_to_parser (i, prio, op) = fmap (\s -> (i, prio, (s,op))) (operator' op)
 
@@ -110,10 +110,10 @@ curlyB_option_expr = do open <- op "{"
                         l <- try (pcons word_node (op "}")) <|> seQ [ option_expr, op "}" ]
                         return (open ++ l)
  
--- | mostly similar to curlyB_option_expr, but we need to handle {^XXX}, 
+-- | mostly similar to curlyB_option_expr, but we need to handle {^Xxx} (and not {^xxx} nor {^Xxx })
 curlyB_option_expr_special =
     do open <- op "{"
-       l <- pcons (fmap (\e -> Tokens [ Word e ]) (pcons (char '^') word_raw)) (op "}")
+       l <- pcons (fmap (\e -> Token (Word e, [])) (pcons (char '^') word_raw)) (op "}")
             <|> try (pcons word_node (op "}")) 
             <|> seQ [ option_expr, op "}" ]
        return (open ++ l)
@@ -146,13 +146,13 @@ expr = newNode"expr"$ expr_ >>= reduce
                           call_paren [f] <|> to_call_no_para [f]
 
       filetest_call = do f <- Perl5Parser.Token.p_Filetest_raw
-                         s <- spaces_comments_token
-                         let e = Tokens (Ident LocalIdent f : s)
+                         s <- spaces_comments
+                         let e = Token (Ident LocalIdent f, s)
                          bareword_call_proto (LocalIdent, f) [e]
 
       get_bareword = try$ do f@(l, i) <- Perl5Parser.Token.p_Ident_raw
-                             s <- spaces_comments_token
-                             let e = Tokens (Ident l i : s)
+                             s <- spaces_comments
+                             let e = Token (Ident l i, s)
                              dont_keep_bareword <- fmap isNothing $ toMaybe $ lookAhead (try_string "->" <|> try_string "=>")
                              if dont_keep_bareword && elem_local f keywords 
                                then pzero 
@@ -189,11 +189,11 @@ expr = newNode"expr"$ expr_ >>= reduce
                        o_fh <- get_filehandle has
                        bareword_call_proto f (e ++ o_fh)
 
-                get_filehandle True = toNodes Perl5Parser.Token.p_Ident <|> toList scalar
+                get_filehandle True = toList (fmap Token Perl5Parser.Token.p_Ident <|> scalar)
                 get_filehandle False = return []
 
-                has_file_handle (ZZ (NodeName"") Nothing [Call (NodeName"call", Tokens (Ident LocalIdent i' : _) : para)] Nothing _ _ _) | i == i' = is_filehandle para
-                has_file_handle (ZZ (NodeName"call") Nothing [Tokens [Ident LocalIdent i']] Nothing _ _ _) | i == i' = return False
+                has_file_handle (ZZ (NodeName"") Nothing [Call (NodeName"call", Token (Ident LocalIdent i', _) : para)] Nothing _ _ _) | i == i' = is_filehandle para
+                has_file_handle (ZZ (NodeName"call") Nothing [Token (Ident LocalIdent i', _)] Nothing _ _ _) | i == i' = return False
                 has_file_handle z = show4debug "call_print, weird" z `seq` return False
 
                 has_file_handle' [Node(NodeName"expr", e)] = is_filehandle e
@@ -201,7 +201,7 @@ expr = newNode"expr"$ expr_ >>= reduce
 
                 is_filehandle (Node(NodeName"$", _) : _) = return True
                 is_filehandle (Call (NodeName"<<", (Node(NodeName"$", _) : _)) : _) = return True
-                is_filehandle (Call (NodeName"call", (Tokens(Ident l s : _) : _)) : _) = fmap isNothing (Env.get_prototype (l, s))
+                is_filehandle (Call (NodeName"call", (Token(Ident l s, _) : _)) : _) = fmap isNothing (Env.get_prototype (l, s))
                 is_filehandle _ = return False
 
       bareword_call_proto :: (IdentT, String) -> [Node] -> Perl5Parser ZZ

@@ -17,7 +17,7 @@ initial_state = State { prototypes = initial_prototypes, env = initial_env, next
 prog :: Perl5Parser Node
 
 prog = newNode "prog" $ do 
-         l1 <- toNodes spaces_comments_token
+         l1 <- onList (\l -> Token(Pod "", l)) spaces_comments
          l2 <- lines_
          eof <?> ""
          return$ l1 ++ l2

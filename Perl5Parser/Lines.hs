@@ -12,7 +12,7 @@ import qualified Perl5Parser.Token.Number
 
 op = toList . operator_node
 
-local_ident s = toList $ fmap Tokens $ pcons (fmap (Ident LocalIdent) $ endWord (string s)) spaces_comments_token
+local_ident s = toList $ fmap Token $ with_spaces_comments (fmap (Ident LocalIdent) $ endWord (string s))
 symbol_ = toList . symbol_node
 
 -- | A collection of "lines" in the program
@@ -35,10 +35,9 @@ line = format
 
 format = newNode"format"$ seQ 
          [ local_ident "format"
-         , toNodes word
+         , toList (fmap Token word)
          , op "="
-         , toNodes $ pcons (fmap PictureFormat $ anyTill (try_string "\n.\n"))
-                           spaces_comments_token
+         , toList (fmap Token $ with_spaces_comments (fmap PictureFormat $ anyTill (try_string "\n.\n")))
          ]
 
 sub_declaration	= newNode"Statement::Sub" p
@@ -52,8 +51,8 @@ sub_declaration	= newNode"Statement::Sub" p
                  return (l1 ++ l2 ++ l3 ++ l4)
           sub_xxx = do l1 <- symbol_ "sub"
                        (fq, i) <- Perl5Parser.Token.p_Ident_sure_raw
-                       l2 <- spaces_comments_token
-                       return ((fq, i), l1 ++ [Tokens (Ident fq i : l2)])
+                       l2 <- spaces_comments
+                       return ((fq, i), l1 ++ [Token (Ident fq i, l2)])
 
 
 scheduled_declaration = newNode"Statement::Scheduled"$ seQ
@@ -75,18 +74,18 @@ prototype :: Perl5Parser (Maybe String, [Node])
 prototype = do char '('
                proto <- many (satisfy (/= ')'))
                char ')'
-               l <- spaces_comments_token
-               return (Just proto, [Tokens (Prototype proto : l)])
+               l <- spaces_comments
+               return (Just proto, [Token (Prototype proto, l)])
 
-subattrlist = option [] (toNodes Perl5Parser.Token.p_Attributes)
+subattrlist = option [] Perl5Parser.Token.p_Attributes
 
 package = newNode"package"$ p
     where p = do l1 <- symbol_node "package"
                  (fq, i) <- Perl5Parser.Token.p_Ident_raw
                  let pkg = case fq of LocalIdent -> i ; _ -> fq_canonical fq ++ "::" ++ i
                  Env.set_package pkg
-                 l2 <- spaces_comments_token
-                 return$ l1 : [Tokens $ Word pkg : l2]
+                 l2 <- spaces_comments
+                 return$ l1 : [Token (Word pkg, l2)]
 
 -- | Real conditional expressions
 if_then = newNode"if_then"$ Env.with_new_lexical_block$ seQ l
@@ -132,7 +131,7 @@ foreach_var = seQ
               , paren_expr
               ]
 
-pod = newNode"pod" (toList $ fmap Tokens Perl5Parser.Token.p_Pod)
+pod = newNode"pod" (toList $ fmap Token Perl5Parser.Token.p_Pod)
 
 block :: Perl5Parser [Node]
 block = Env.with_new_lexical_block$ seQ [ op "{", lines_, op "}" ]
@@ -141,7 +140,7 @@ block_allow_pod = seQ [ block, many pod ]
 
 var_declarator = any_symbol_node [ "my", "our" ]
 semi_colon = newNode"Token::Structure"$ op ";"
-label = fmap Tokens Perl5Parser.Token.p_Label
+label = fmap Token Perl5Parser.Token.p_Label
 
 
 -- | An expression which may have a side-effect
@@ -157,11 +156,10 @@ infix_cmd_optional = seQ [ choice (map symbol_ infix_cmds) <?> ""
 
 use :: Perl5Parser Node
 use = newNode"use"$ try$ seQ [ symbol_ "use"
-                             , toNodes $ version_number <|> use_module
+                             , toList version_number <|> use_module
                              , lexpr
                              ]
     where
-      version_number = pcons (fmap (Number VersionNumber) Perl5Parser.Token.Number.p_VersionNumber) spaces_comments_token
-      use_module = seQ [ Perl5Parser.Token.p_Ident
-                       , option [] version_number
-                       ]
+      version_number = with_spaces_comments_ (fmap (Number VersionNumber) Perl5Parser.Token.Number.p_VersionNumber)
+      use_module = pcons (fmap Token Perl5Parser.Token.p_Ident) (option [] (toList version_number))
+

@@ -17,16 +17,16 @@ import qualified Perl5Parser.Token.Regexp
 import qualified Perl5Parser.Token.HereDoc
 
 
-p_Pod :: Perl5Parser [TokenT]
-p_Pod = pcons (fmap Pod p_Pod_raw) spaces_comments_token
+p_Pod :: Perl5Parser (TokenT, [SpaceCommentT])
+p_Pod = with_spaces_comments (fmap Pod p_Pod_raw)
 p_Pod_raw = seQ 
          [ seQ [ lineBegin (charl '='), toList (satisfy isAlpha) ]
          , anyTill (try_string "\n=cut" <|> (eof >> return "")) -- ^ allow non closed pods (eg: the buggy ExtUtils/MM_BeOS.pm)
          , anyTill (charl '\n' <|> (eof >> return ""))
          ]
 
-p_Label :: Perl5Parser [TokenT]
-p_Label = pcons p_Label_raw spaces_comments_token
+p_Label :: Perl5Parser (TokenT, [SpaceCommentT])
+p_Label = with_spaces_comments p_Label_raw
 p_Label_raw = try$ do s <- word_raw
                       if s == "s" then pzero else return []
                       sp <- spaces_no_nl
@@ -39,12 +39,12 @@ to_Ident (l, i) = (FqIdent { fq_canonical = pkg, fq_verbatim = raw }, i)
           raw = concat (map (\(i, sep) -> i ++ sep) l)
 
 -- | :: a ::b  c:: ::d:: e::f  e'f  e::'f  e::2
-p_Ident :: Perl5Parser [TokenT]
-p_Ident = pcons (fmap (\(pkg, i) -> Ident pkg i) p_Ident_raw) spaces_comments_token
+p_Ident :: Perl5Parser (TokenT, [SpaceCommentT])
+p_Ident = with_spaces_comments (fmap (\(pkg, i) -> Ident pkg i) p_Ident_raw)
 
 -- | same as p_Ident with also 'b (::b)
-p_Ident_sure :: Perl5Parser [TokenT]
-p_Ident_sure = pcons (fmap (\(pkg, i) -> Ident pkg i) p_Ident_sure_raw) spaces_comments_token
+p_Ident_sure :: Perl5Parser (TokenT, [SpaceCommentT])
+p_Ident_sure = with_spaces_comments (fmap (\(pkg, i) -> Ident pkg i) p_Ident_sure_raw)
 
 p_Ident_raw :: Perl5Parser (IdentT, String)
 p_Ident_raw = fmap to_Ident (p_Ident_raw_sep1 "" <|> p_Ident_raw_word word_raw)
@@ -66,14 +66,14 @@ p_Ident_raw_sep2 s = do (l, i) <- p_Ident_raw_word (try (string "'" >> word_raw)
                         return ((s, "'") : l, i)
 
 -- | file test functions (eg: -x '/sbin/halt')
+p_Filetest_raw :: Perl5Parser String
 p_Filetest_raw = try $ do char '-'
                           c <- endWord (oneOf Perl5Parser.Prototype.filetest_functions)
                           return$ "-" ++ [c]
 
-p_Attributes :: Perl5Parser [TokenT]
-p_Attributes = fmap concat $ many1 $ seQ [ operator ":"
-                                         , manY (pcons attribute spaces_comments_token)
-                                         ]
+p_Attributes :: Perl5Parser [Node]
+p_Attributes = fmap concat $ many1 $ pcons (operator_node ":")
+                                           (many (fmap Token $ with_spaces_comments attribute))
     where attribute = do w <- word_raw
                          para <- toMaybe parameters
                          return (Attribute w para)
@@ -83,8 +83,8 @@ p_Attributes = fmap concat $ many1 $ seQ [ operator ":"
 
 
 
-p_Token :: Perl5Parser [TokenT]
-p_Token = do pcons p spaces_comments_token
+p_Token :: Perl5Parser (TokenT, [SpaceCommentT])
+p_Token = do with_spaces_comments p
     where p = 
                   fmap to_Quote Perl5Parser.Token.Quote.p_Interpolate
               <|> fmap to_Quote Perl5Parser.Token.Quote.p_Literal

@@ -21,16 +21,16 @@ instance Serialize a => Serialize [a] where
 instance Serialize Node where
     verbatim (Node(_, l)) = verbatim l
     verbatim (Call(_, l)) = verbatim l
-    verbatim (Tokens l) = verbatim l
+    verbatim (Token (e, l)) = verbatim e ++ verbatim l
 
     with_parentheses (Call(_, l)) = concat $ map may_add_para l
         where may_add_para e = if add_para e then "(" ++ s ++ ")" else s
                   where s = with_parentheses e
-                        add_para (Tokens _) = False
+                        add_para (Token _) = False
                         add_para (Node(NodeName n, _)) = not $ elem n ["paren_option_expr", "$", "@", "%", "{}", "[]" ]
                         add_para _ = True
     with_parentheses (Node(_, l)) = with_parentheses l
-    with_parentheses (Tokens l) = with_parentheses l
+    with_parentheses (Token (e, l)) = with_parentheses e ++ verbatim l
 
 instance Serialize SpaceCommentT where
     verbatim (Whitespace s) = s
@@ -46,7 +46,6 @@ instance Serialize TokenT where
     verbatim (Label label co) = label ++ verbatim co ++ ":"
     verbatim (Number _ s) = s
     verbatim (Word s) = s
-    verbatim (SpaceComment l) = verbatim l
     verbatim (PictureFormat s) = s
     verbatim (Prototype s) = "(" ++ s ++ ")"
     verbatim (Ident fq i) = to_s_IdentT fq ++ i

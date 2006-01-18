@@ -94,7 +94,6 @@ data TokenT =
   | Regexp RegexpT
   | Number NumberT String
   | Word String
-  | SpaceComment [SpaceCommentT]
   | Separator SeparatorT [String] String
   | HereDoc [SpaceCommentT] TokenT
   | PictureFormat String
@@ -110,5 +109,5 @@ data TokenT =
 data Node = 
     Node(NodeName, [Node])
   | Call(NodeName, [Node])
-  | Tokens [TokenT]
+  | Token (TokenT, [SpaceCommentT])
     deriving Show
