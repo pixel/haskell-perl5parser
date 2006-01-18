@@ -1,5 +1,5 @@
 module Perl5Parser.Types
-    ( Prototypes(..), State(..)
+    ( Env_lexical(..), Env(..), Prototypes(..), State(..)
     , NodeName(..), SpaceCommentT(..), BalancedOrNot(..), LiteralT, SubstituteT
     , QuoteT(..), QuoteLikeT(..), RegexpOptionT, RegexpT(..), NumberT(..), SeparatorT(..)
     , IdentT(..), TokenT(..), Node(..)
@@ -15,8 +15,17 @@ data Prototypes = Prototypes
     , per_pkg_prototypes :: Map.Map (String, String) String
     }
 
+data Env_lexical = Env_lexical
+    { current_package :: String     
+    }
+
+data Env = Env 
+    { env_lexical :: Env_lexical
+    }
+
 data State = State 
     { prototypes :: Prototypes
+    , env :: Env
     , next_line_is_here_doc :: Maybe String
     }
 
