@@ -89,7 +89,7 @@ package = newNode"package"$ p
                  return$ l1 : [Tokens $ Word pkg : l2]
 
 -- | Real conditional expressions
-if_then = newNode"if_then"$ seQ l
+if_then = newNode"if_then"$ Env.with_new_lexical_block$ seQ l
     where l = [ symbol_ "if" <|> symbol_ "unless"
               , paren_expr
               , block_allow_pod
@@ -104,13 +104,13 @@ else_ = seQ [ symbol_ "else"
             , block
             ]
 
-loop = newNode"loop"$ seQ l
+loop = newNode"loop"$ Env.with_new_lexical_block$ seQ l
     where l = [ symbol_ "while" <|> symbol_ "until"
               , paren_option_expr
               , block_allow_pod
               , option [] continue_block
               ]
-foreach  = newNode"for"$ seQ l
+foreach  = newNode"for"$ Env.with_new_lexical_block$ seQ l
     where l = [ symbol_ "for" <|> symbol_ "foreach"
               , foreach_novar <|> foreach_var
               , block_allow_pod
