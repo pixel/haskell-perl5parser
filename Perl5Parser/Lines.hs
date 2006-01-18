@@ -135,7 +135,7 @@ foreach_var = seQ
 pod = newNode"pod" (toList $ fmap Tokens Perl5Parser.Token.p_Pod)
 
 block :: Perl5Parser [Node]
-block = seQ [ op "{", lines_, op "}" ]
+block = Env.with_new_lexical_block$ seQ [ op "{", lines_, op "}" ]
 continue_block = seQ [ symbol_ "continue", block ]
 block_allow_pod = seQ [ block, many pod ]
 
