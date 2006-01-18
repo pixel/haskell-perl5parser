@@ -6,7 +6,7 @@ import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 import Perl5Parser.Term
 import Perl5Parser.Expr
-import Perl5Parser.Env
+import qualified Perl5Parser.Env as Env
 import qualified Perl5Parser.Token
 import qualified Perl5Parser.Token.Number
 
@@ -46,7 +46,7 @@ sub_declaration	= newNode"Statement::Sub" p
                  (proto, l2) <- option_prototype
                  case proto of
                    Nothing -> return ()
-                   Just proto -> set_prototype ident proto
+                   Just proto -> Env.set_prototype ident proto
                  l3 <- subattrlist
                  l4 <- block <|> op ";"
                  return (l1 ++ l2 ++ l3 ++ l4)

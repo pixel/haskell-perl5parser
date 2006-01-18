@@ -10,9 +10,9 @@ import Perl5Parser.Common
 import Perl5Parser.Types
 import Perl5Parser.Serialize
 import Perl5Parser.ParserHelper
+import qualified Perl5Parser.Env as Env
 import qualified Perl5Parser.Token
 import Perl5Parser.Term
-import Perl5Parser.Env
 import Perl5Parser.Prototype
 import {-# SOURCE #-} Perl5Parser.Lines
 
@@ -201,12 +201,12 @@ expr = newNode"expr"$ expr_ >>= reduce
 
                 is_filehandle (Node(NodeName"$", _) : _) = return True
                 is_filehandle (Call (NodeName"<<", (Node(NodeName"$", _) : _)) : _) = return True
-                is_filehandle (Call (NodeName"call", (Tokens(Ident l s : _) : _)) : _) = fmap isNothing (get_prototype (l, s))
+                is_filehandle (Call (NodeName"call", (Tokens(Ident l s : _) : _)) : _) = fmap isNothing (Env.get_prototype (l, s))
                 is_filehandle _ = return False
 
       bareword_call_proto :: (IdentT, String) -> [Node] -> Perl5Parser ZZ
       bareword_call_proto f e = 
-          do proto <- get_prototype f
+          do proto <- Env.get_prototype f
              special_ proto <|> normal_choices proto
           where
 
