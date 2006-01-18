@@ -6,7 +6,7 @@ import Perl5Parser.Types
 import Perl5Parser.ParserHelper
 import Perl5Parser.Term
 import Perl5Parser.Expr
-import Perl5Parser.Prototype
+import Perl5Parser.Env
 import qualified Perl5Parser.Token
 import qualified Perl5Parser.Token.Number
 

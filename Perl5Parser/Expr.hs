@@ -12,6 +12,7 @@ import Perl5Parser.Serialize
 import Perl5Parser.ParserHelper
 import qualified Perl5Parser.Token
 import Perl5Parser.Term
+import Perl5Parser.Env
 import Perl5Parser.Prototype
 import {-# SOURCE #-} Perl5Parser.Lines
 
