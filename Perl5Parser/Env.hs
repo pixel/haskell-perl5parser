@@ -15,11 +15,12 @@ get_prototype (LocalIdent, f) = do state <- getState
 get_prototype (fq, f) = do state <- getState
                            return$ Map.lookup (fq_canonical fq, f) (per_pkg_prototypes (prototypes state))
 
-updatePrototypes :: (Prototypes -> Prototypes) -> Perl5Parser ()
-updatePrototypes f = updateState (\state -> state { prototypes = f (prototypes state) })
-
 set_prototype :: (IdentT, String) -> String -> Perl5Parser ()
-set_prototype (LocalIdent, f) proto = updatePrototypes update
+set_prototype (LocalIdent, f) proto = update_Prototypes update
     where update protos = protos { local_prototypes = Map.insert f proto (local_prototypes protos) }
-set_prototype (fq, f) proto = updatePrototypes update
+set_prototype (fq, f) proto = update_Prototypes update
     where update protos = protos { per_pkg_prototypes = Map.insert (fq_canonical fq, f) proto (per_pkg_prototypes protos) }
+
+
+update_Prototypes :: (Prototypes -> Prototypes) -> Perl5Parser ()
+update_Prototypes f = updateState (\state -> state { prototypes = f (prototypes state) })
